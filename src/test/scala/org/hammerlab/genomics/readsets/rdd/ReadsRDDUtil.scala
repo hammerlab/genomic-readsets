@@ -5,7 +5,7 @@ import org.apache.spark.rdd.RDD
 import org.hammerlab.genomics.reads.{ MappedRead, ReadsUtil }
 import org.hammerlab.genomics.readsets.args.SingleSampleArgs
 import org.hammerlab.genomics.readsets.io.{ InputConfig, TestInputConfig }
-import org.hammerlab.genomics.readsets.{ ReadSets, SampleId }
+import org.hammerlab.genomics.readsets.{ ReadSets, SampleId, SampleRead }
 import org.hammerlab.test.resources.File
 
 trait ReadsRDDUtil
@@ -13,14 +13,14 @@ trait ReadsRDDUtil
 
   def sc: SparkContext
 
-  def makeReadsRDD(reads: (String, String, Int)*): RDD[MappedRead] = makeReadsRDD(sampleId = 0, reads: _*)
+  def makeReadsRDD(reads: (String, String, Int)*): RDD[SampleRead] = makeReadsRDD(sampleId = 0, reads: _*)
 
-  def makeReadsRDD(sampleId: SampleId, reads: (String, String, Int)*): RDD[MappedRead] =
+  def makeReadsRDD(sampleId: SampleId, reads: (String, String, Int)*): RDD[SampleRead] =
     sc.parallelize(
       for {
         (sequence, cigar, start) <- reads
       } yield
-        makeRead(sequence, cigar, start)
+        (sampleId → makeRead(sequence, cigar, start)): SampleRead
     )
 
   def loadTumorNormalReads(sc: SparkContext,

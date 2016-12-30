@@ -1,28 +1,24 @@
 organization := "org.hammerlab.genomics"
 name := "readsets"
-version := "1.0.0"
+version := "1.0.0-SNAPSHOT"
 
-libraryDependencies ++= Seq(
-  libraries.value('adam_core),
-  libraries.value('args4j),
-  libraries.value('hadoop_bam),
-  libraries.value('iterators),
-  libraries.value('htsjdk),
-  libraries.value('loci),
-  libraries.value('magic_rdds),
-  libraries.value('reads),
-  libraries.value('slf4j),
-  libraries.value('spark_util)
+addSparkDeps
+
+deps ++= Seq(
+  libs.value('adam_core),
+  libs.value('args4j),
+  libs.value('hadoop_bam),
+  libs.value('iterators),
+  libs.value('htsjdk),
+  libs.value('loci),
+  libs.value('magic_rdds),
+  libs.value('slf4j),
+  libs.value('spark_util)
 )
 
-providedDeps ++= Seq(
-  libraries.value('spark),
-  libraries.value('hadoop)
+compileAndTestDeps ++= Seq(
+  libs.value('reads),
+  libs.value('reference)
 )
 
-testDeps ++= Seq(
-  libraries.value('spark_tests),
-  libraries.value('test_utils),
-  libraries.value('reads) classifier("tests")
-
-)
+publishTestJar

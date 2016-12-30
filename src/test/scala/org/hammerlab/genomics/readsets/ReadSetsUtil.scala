@@ -5,6 +5,7 @@ import org.hammerlab.genomics.loci.parsing.ParsedLoci
 import org.hammerlab.genomics.loci.set.LociSet
 import org.hammerlab.genomics.reads.ReadsUtil
 import org.hammerlab.genomics.readsets.io.{ Input, TestInputConfig }
+import org.hammerlab.genomics.reference.test.ContigLengthsUtil
 
 trait ReadSetsUtil
   extends ContigLengthsUtil

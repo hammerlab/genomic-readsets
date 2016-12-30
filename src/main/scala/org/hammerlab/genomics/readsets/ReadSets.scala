@@ -12,11 +12,11 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.SequenceDictionary
 import org.bdgenomics.adam.rdd.ADAMContext
 import org.hammerlab.genomics.loci.set.LociSet
-import org.hammerlab.genomics.reference.{ ContigLengths, ContigName, Locus }
 import org.hammerlab.genomics.reads.Read
 import org.hammerlab.genomics.readsets.args.{ Base ⇒ BaseArgs }
 import org.hammerlab.genomics.readsets.io.{ Input, InputConfig }
 import org.hammerlab.genomics.readsets.rdd.ReadsRDD
+import org.hammerlab.genomics.reference.{ ContigLengths, ContigName, Locus }
 import org.seqdoop.hadoop_bam.util.SAMHeaderReader
 import org.seqdoop.hadoop_bam.{ AnySAMInputFormat, BAMInputFormat, SAMRecordWritable }
 
@@ -45,6 +45,14 @@ case class ReadSets(readsRDDs: PerSample[ReadsRDD],
   lazy val mappedReadsRDDs = readsRDDs.map(_.mappedReads)
 
   lazy val allMappedReads = sc.union(mappedReadsRDDs).setName("unioned reads")
+
+  lazy val sampleIdxKeyedMappedReads: RDD[SampleRead] =
+    sc.union(
+      for {
+        (mappedReadsRDD, sampleId) ← mappedReadsRDDs.zipWithIndex
+      } yield
+        mappedReadsRDD.map(r ⇒ (sampleId → r): SampleRead)
+    )
 }
 
 object ReadSets extends Logging {
@@ -89,7 +97,7 @@ object ReadSets extends Logging {
         sc.union(readsRDDs)
           .flatMap(_.asMappedRead)
           .map(read => read.contigName -> read.end)
-          .reduceByKey(math.max)
+          .reduceByKey(_ max _)
           .collectAsMap()
           .toMap
 
@@ -98,7 +106,8 @@ object ReadSets extends Logging {
         (reads, input) <- readsRDDs.zip(inputs)
       } yield
        ReadsRDD(reads, input)
-      ).toVector,
+      )
+      .toVector,
       sequenceDictionary,
       contigLengths
     )

@@ -1,6 +1,8 @@
 package org.hammerlab.genomics
 
 import org.apache.spark.rdd.RDD
+import org.hammerlab.genomics.reads.MappedRead
+import org.hammerlab.genomics.reference.Region
 
 /**
  * This package contains functionality related to processing multiple "sets of reads" (e.g. BAM files) in the context of
@@ -17,4 +19,18 @@ package object readsets {
   type NumSamples = Int
 
   type SampleName = String
+
+  type SampleRegion = Region with HasSampleId
+
+  implicit class SampleRead(val t: (SampleId, MappedRead))
+    extends AnyVal
+      with HasSampleId {
+    override def sampleId: SampleId = t._1
+    def read: MappedRead = t._2
+  }
+
+  object SampleRead {
+    implicit def unpackSampleRead(sampleRead: SampleRead): MappedRead = sampleRead.read
+  }
+
 }

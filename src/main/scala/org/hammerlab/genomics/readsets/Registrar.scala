@@ -7,6 +7,8 @@ import org.hammerlab.genomics.{ loci, reads }
 class Registrar extends KryoRegistrator {
   override def registerClasses(kryo: Kryo): Unit = {
     new reads.Registrar().registerClasses(kryo)
-    new loci.kryo.Registrar().registerClasses(kryo)
+    new loci.set.Registrar().registerClasses(kryo)
+    kryo.register(classOf[SampleRead])
+    kryo.register(classOf[Array[SampleRead]])
   }
 }
