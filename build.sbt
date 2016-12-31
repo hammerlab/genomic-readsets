@@ -22,3 +22,4 @@ compileAndTestDeps ++= Seq(
 )
 
 publishTestJar
+takeFirstLog4JProperties
