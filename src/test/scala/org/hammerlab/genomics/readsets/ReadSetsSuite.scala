@@ -7,14 +7,14 @@ import org.hammerlab.genomics.loci.parsing.ParsedLoci
 import org.hammerlab.genomics.reads.{ MappedRead, Read }
 import org.hammerlab.genomics.readsets.io.{ Input, InputConfig, TestInputConfig }
 import org.hammerlab.genomics.readsets.rdd.ReadsRDDUtil
-import org.hammerlab.spark.test.suite.{ KryoSerializerSuite, SparkSerializerSuite }
+import org.hammerlab.spark.test.suite.{ KryoSparkSuite, SparkSerialization }
 import org.hammerlab.test.files.TmpFiles
 import org.hammerlab.test.matchers.LazyAssert
 import org.hammerlab.test.resources.File
 
 class ReadSetsSuite
-  extends KryoSerializerSuite(classOf[Registrar])
-    with SparkSerializerSuite
+  extends KryoSparkSuite(classOf[Registrar])
+    with SparkSerialization
     with TmpFiles
     with LazyAssert
     with ReadsRDDUtil {
