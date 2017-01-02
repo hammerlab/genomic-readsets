@@ -21,5 +21,11 @@ compileAndTestDeps ++= Seq(
   libs.value('reference)
 )
 
+// org.hammerlab.genomics:reads::tests uses org.hammerlab.genomics:utils::{compile,test}, but test-JAR deps don't
+// propagate trans-deps like non-classified ones.
+
+testDeps += libs.value('genomic_utils)
+testJarTestDeps += libs.value('genomic_utils)
+
 publishTestJar
 takeFirstLog4JProperties
