@@ -7,6 +7,7 @@ import org.hammerlab.genomics.loci.parsing.ParsedLoci
 import org.hammerlab.genomics.reads.{ MappedRead, Read }
 import org.hammerlab.genomics.readsets.io.{ Input, InputConfig, TestInputConfig }
 import org.hammerlab.genomics.readsets.rdd.ReadsRDDUtil
+import org.hammerlab.genomics.reference.test.{ ContigNameUtil, LocusUtil }
 import org.hammerlab.spark.test.suite.{ KryoSparkSuite, SparkSerialization }
 import org.hammerlab.test.files.TmpFiles
 import org.hammerlab.test.matchers.LazyAssert
@@ -17,6 +18,8 @@ class ReadSetsSuite
     with SparkSerialization
     with TmpFiles
     with LazyAssert
+    with ContigNameUtil
+    with LocusUtil
     with ReadsRDDUtil {
 
   test("test BAM filtering by loci") {
