@@ -20,7 +20,7 @@ trait ReadsRDDUtil
       for {
         (sequence, cigar, start) <- reads
       } yield
-        (sampleId → makeRead(sequence, cigar, start)): SampleRead
+        SampleRead(sampleId → makeRead(sequence, cigar, start))
     )
 
   def loadTumorNormalReads(sc: SparkContext,
