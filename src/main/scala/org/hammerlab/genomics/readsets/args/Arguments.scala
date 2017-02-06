@@ -8,9 +8,18 @@ import org.kohsuke.args4j.{Argument, Option => Args4JOption}
  */
 trait Arguments extends Base {
 
-  @Argument(required = true, multiValued = true, usage = "FILE1 FILE2 FILE3")
+  @Argument(
+    required = true,
+    multiValued = true,
+    usage = "Paths to sets of reads: FILE1 FILE2 FILE3",
+    metaVar = "PATHS"
+  )
   var paths: Array[String] = Array()
 
-  @Args4JOption(name = "--sample-names", handler = classOf[StringArrayOptionHandler], usage = "name1 ... nameN")
+  @Args4JOption(
+    name = "--sample-names",
+    handler = classOf[StringArrayOptionHandler],
+    usage = "name1 ... nameN"
+  )
   var sampleNames: Array[String] = Array()
 }
