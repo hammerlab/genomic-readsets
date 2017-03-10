@@ -57,7 +57,7 @@ case class ReadSets(readsRDDs: PerSample[ReadsRDD],
 
 object ReadSets extends Logging {
 
-  def apply(sc: SparkContext, args: BaseArgs): (ReadSets, LociSet) = {
+  def apply(sc: SparkContext, args: BaseArgs)(implicit cf: ContigName.Factory): (ReadSets, LociSet) = {
     val config = args.parseConfig(sc.hadoopConfiguration)
     val readsets = apply(sc, args.inputs, config, !args.noSequenceDictionary)
     (readsets, LociSet(config.loci, readsets.contigLengths))
@@ -69,7 +69,7 @@ object ReadSets extends Logging {
   def apply(sc: SparkContext,
             inputs: PerSample[Input],
             config: InputConfig,
-            contigLengthsFromDictionary: Boolean = true): ReadSets =
+            contigLengthsFromDictionary: Boolean = true)(implicit cf: ContigName.Factory): ReadSets =
     apply(sc, inputs.map((_, config)), contigLengthsFromDictionary)
 
   /**
@@ -77,7 +77,7 @@ object ReadSets extends Logging {
    */
   def apply(sc: SparkContext,
             inputsAndFilters: PerSample[(Input, InputConfig)],
-            contigLengthsFromDictionary: Boolean): ReadSets = {
+            contigLengthsFromDictionary: Boolean)(implicit cf: ContigName.Factory): ReadSets = {
 
     val (inputs, _) = inputsAndFilters.unzip
 
@@ -132,7 +132,7 @@ object ReadSets extends Logging {
   private[readsets] def load(filename: String,
                              sc: SparkContext,
                              sampleId: Int,
-                             config: InputConfig): (RDD[Read], SequenceDictionary) = {
+                             config: InputConfig)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
 
     val (allReads, sequenceDictionary) =
       if (filename.endsWith(".bam") || filename.endsWith(".sam"))
@@ -149,7 +149,7 @@ object ReadSets extends Logging {
   private def loadFromBAM(filename: String,
                           sc: SparkContext,
                           sampleId: Int,
-                          config: InputConfig): (RDD[Read], SequenceDictionary) = {
+                          config: InputConfig)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
 
     val path = new Path(filename)
 
@@ -204,7 +204,7 @@ object ReadSets extends Logging {
   private def loadFromADAM(filename: String,
                            sc: SparkContext,
                            sampleId: Int,
-                           config: InputConfig): (RDD[Read], SequenceDictionary) = {
+                           config: InputConfig)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
 
     logger.info(s"Using ADAM to read: $filename")
 

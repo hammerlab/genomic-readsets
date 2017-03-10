@@ -133,7 +133,7 @@ class ReadSetsSuite
   test("load read from ADAM") {
     // First load reads from SAM using ADAM and save as ADAM
     val adamContext: ADAMContext = sc
-    val adamRecords = adamContext.loadBam(File("mdtagissue.sam").path)
+    val adamRecords = adamContext.loadBam(File("mdtagissue.sam"))
 
     val adamOut = tmpPath(suffix = ".adam")
     val args = new ADAMSaveAnyArgs {
