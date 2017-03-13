@@ -319,7 +319,7 @@ object ReadSets extends Logging {
     for {
       record <- sequenceDictionary.records
     } {
-      builder += ((record.name.toString, record.length))
+      builder += ((record.name, record.length))
     }
     builder.result
   }
