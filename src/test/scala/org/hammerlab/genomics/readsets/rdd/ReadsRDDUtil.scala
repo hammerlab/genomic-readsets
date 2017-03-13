@@ -2,10 +2,12 @@ package org.hammerlab.genomics.readsets.rdd
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.hammerlab.genomics.bases.Bases
 import org.hammerlab.genomics.reads.{ MappedRead, ReadsUtil }
 import org.hammerlab.genomics.readsets.args.SingleSampleArgs
 import org.hammerlab.genomics.readsets.io.{ InputConfig, TestInputConfig }
 import org.hammerlab.genomics.readsets.{ ReadSets, SampleId, SampleRead }
+import org.hammerlab.genomics.reference.Locus
 import org.hammerlab.test.resources.File
 
 trait ReadsRDDUtil
@@ -13,12 +15,12 @@ trait ReadsRDDUtil
 
   def sc: SparkContext
 
-  def makeReadsRDD(reads: (String, String, Int)*): RDD[SampleRead] = makeReadsRDD(sampleId = 0, reads: _*)
+  def makeReadsRDD(reads: (Bases, String, Locus)*): RDD[SampleRead] = makeReadsRDD(sampleId = 0, reads: _*)
 
-  def makeReadsRDD(sampleId: SampleId, reads: (String, String, Int)*): RDD[SampleRead] =
+  def makeReadsRDD(sampleId: SampleId, reads: (Bases, String, Locus)*): RDD[SampleRead] =
     sc.parallelize(
       for {
-        (sequence, cigar, start) <- reads
+        (sequence, cigar, start) ← reads
       } yield
         SampleRead(sampleId → makeRead(sequence, cigar, start))
     )
@@ -28,7 +30,7 @@ trait ReadsRDDUtil
                            normalFile: String): (Seq[MappedRead], Seq[MappedRead]) = {
     val config = TestInputConfig.mapped(nonDuplicate = true, passedVendorQualityChecks = true)
     (
-      loadReadsRDD(sc, tumorFile, config = config).mappedReads.collect(),
+      loadReadsRDD(sc,  tumorFile, config = config).mappedReads.collect(),
       loadReadsRDD(sc, normalFile, config = config).mappedReads.collect()
     )
   }
