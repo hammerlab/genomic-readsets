@@ -5,12 +5,13 @@ import org.bdgenomics.adam.models.{ SequenceDictionary, SequenceRecord }
 import org.bdgenomics.adam.rdd.{ ADAMContext, ADAMSaveAnyArgs }
 import org.hammerlab.genomics.loci.parsing.ParsedLoci
 import org.hammerlab.genomics.reads.{ MappedRead, Read }
+import org.hammerlab.genomics.readsets.ReadSets.mergeSequenceDictionaries
+import org.hammerlab.genomics.readsets.args.SingleSampleArgs
 import org.hammerlab.genomics.readsets.io.{ Input, InputConfig, TestInputConfig }
 import org.hammerlab.genomics.readsets.rdd.ReadsRDDUtil
 import org.hammerlab.genomics.reference.test.ClearContigNames
 import org.hammerlab.genomics.reference.test.LociConversions._
 import org.hammerlab.spark.test.suite.{ KryoSparkSuite, SparkSerialization }
-import org.hammerlab.test.files.TmpFiles
 import org.hammerlab.test.matchers.LazyAssert
 import org.hammerlab.test.resources.File
 
@@ -130,7 +131,7 @@ class ReadSetsSuite
     readSet.reads.count should be(23)
   }
 
-  test("load read from ADAM") {
+  test("load reads from ADAM") {
     // First load reads from SAM using ADAM and save as ADAM
     val adamContext: ADAMContext = sc
     val adamRecords = adamContext.loadBam(File("mdtagissue.sam"))
@@ -149,9 +150,20 @@ class ReadSetsSuite
 
     adamRecords.saveAsParquet(args)
 
-    ReadSets.load(adamOut, sc, 0, InputConfig.empty)._1.count() should be(8)
+    val inputArgs = new SingleSampleArgs {}
+    inputArgs.reads = adamOut
 
-    ReadSets.load(adamOut, sc, 0, TestInputConfig.mapped(nonDuplicate = true))._1.count() should be(3)
+    ReadSets(sc, inputArgs)
+      ._1
+      .allMappedReads
+      .count() should be(3)
+
+    inputArgs.includeDuplicates = true
+
+    ReadSets(sc, inputArgs)
+      ._1
+      .allMappedReads
+      .count() should be(5)
   }
 
   test("load and serialize / deserialize reads") {
@@ -187,7 +199,7 @@ class ReadSetsSuite
   test("merge identical seqdicts") {
     val dict1 = sequenceDictionary(("1", 111, "aaa"), ("2", 222, "bbb"))
     val dict2 = sequenceDictionary(("1", 111, "aaa"), ("2", 222, "bbb"))
-    val merged = ReadSets.mergeSequenceDictionaries(inputs, List(dict1, dict2))
+    val merged = mergeSequenceDictionaries(inputs, List(dict1, dict2))
     merged should be(dict1)
     merged should be(dict2)
   }
@@ -196,7 +208,7 @@ class ReadSetsSuite
     val dict1 = sequenceDictionary(("1", 111, "aaa"), ("2", 222, "bbb"))
     val dict2 = sequenceDictionary(("1", 111, "aaa"), ("3", 333, "ccc"))
 
-    val merged = ReadSets.mergeSequenceDictionaries(inputs, List(dict1, dict2))
+    val merged = mergeSequenceDictionaries(inputs, List(dict1, dict2))
 
     val expected = sequenceDictionary(("1", 111, "aaa"), ("2", 222, "bbb"), ("3", 333, "ccc"))
 
@@ -208,7 +220,7 @@ class ReadSetsSuite
     val dict2 = sequenceDictionary(("1", 111, "aaa"), ("2", 333, "ccc"))
 
     intercept[IllegalArgumentException] {
-      ReadSets.mergeSequenceDictionaries(inputs, List(dict1, dict2))
+      mergeSequenceDictionaries(inputs, List(dict1, dict2))
     }.getMessage should startWith("Conflicting sequence records for 2")
   }
 }
