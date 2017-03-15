@@ -1,7 +1,5 @@
 package org.hammerlab.genomics.readsets
 
-import java.io.File
-
 import grizzled.slf4j.Logging
 import htsjdk.samtools.ValidationStringency
 import org.apache.hadoop.fs.Path
@@ -124,21 +122,21 @@ object ReadSets extends Logging {
    * Given a filename and a spark context, return a pair (RDD, SequenceDictionary), where the first element is an RDD
    * of Reads, and the second element is the Sequence Dictionary giving info (e.g. length) about the contigs in the BAM.
    *
-   * @param filename name of file containing reads
+   * @param path name of file containing reads
    * @param sc spark context
    * @param config config to apply
    * @return
    */
-  private[readsets] def load(filename: String,
+  private[readsets] def load(path: Path,
                              sc: SparkContext,
                              sampleId: Int,
                              config: InputConfig)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
 
     val (allReads, sequenceDictionary) =
-      if (filename.endsWith(".bam") || filename.endsWith(".sam"))
-        loadFromBAM(filename, sc, sampleId, config)
+      if (path.getName.endsWith(".bam") || path.getName.endsWith(".sam"))
+        loadFromBAM(path, sc, sampleId, config)
       else
-        loadFromADAM(filename, sc, sampleId, config)
+        loadFromADAM(path, sc, sampleId, config)
 
     val reads = filterRDD(allReads, config, sequenceDictionary)
 
@@ -146,14 +144,12 @@ object ReadSets extends Logging {
   }
 
   /** Returns an RDD of Reads and SequenceDictionary from reads in BAM format **/
-  private def loadFromBAM(filename: String,
+  private def loadFromBAM(path: Path,
                           sc: SparkContext,
                           sampleId: Int,
                           config: InputConfig)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
 
-    val path = new Path(filename)
-
-    val basename = new File(filename).getName
+    val basename = path.getName
     val shortName = basename.substring(0, math.min(basename.length, 100))
 
     val conf = sc.hadoopConfiguration
@@ -171,7 +167,7 @@ object ReadSets extends Logging {
       .overlapsLociOpt
       .fold(conf.unset(BAMInputFormat.INTERVALS_PROPERTY)) (
         overlapsLoci =>
-          if (filename.endsWith(".bam")) {
+          if (basename.endsWith(".bam")) {
             val contigLengths = getContigLengths(sequenceDictionary)
 
             val bamIndexIntervals =
@@ -181,16 +177,16 @@ object ReadSets extends Logging {
               ).toHtsJDKIntervals
 
             BAMInputFormat.setIntervals(conf, bamIndexIntervals)
-          } else if (filename.endsWith(".sam")) {
-            warn(s"Loading SAM file: $filename with intervals specified. This requires parsing the entire file.")
+          } else if (basename.endsWith(".sam")) {
+            warn(s"Loading SAM file: $path with intervals specified. This requires parsing the entire file.")
           } else {
-            throw new IllegalArgumentException(s"File $filename is not a BAM or SAM file")
+            throw new IllegalArgumentException(s"File $path is not a BAM or SAM file")
           }
       )
 
     val reads: RDD[Read] =
       sc
-        .newAPIHadoopFile[LongWritable, SAMRecordWritable, AnySAMInputFormat](filename)
+        .newAPIHadoopFile[LongWritable, SAMRecordWritable, AnySAMInputFormat](path.toString)
         .setName(s"Hadoop file: $shortName")
         .values
         .setName(s"Hadoop reads: $shortName")
@@ -201,17 +197,17 @@ object ReadSets extends Logging {
   }
 
   /** Returns an RDD of Reads and SequenceDictionary from reads in ADAM format **/
-  private def loadFromADAM(filename: String,
+  private def loadFromADAM(path: Path,
                            sc: SparkContext,
                            sampleId: Int,
                            config: InputConfig)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
 
-    logger.info(s"Using ADAM to read: $filename")
+    logger.info(s"Using ADAM to read: $path")
 
     val adamContext: ADAMContext = sc
 
     val alignmentRDD =
-      adamContext.loadAlignments(filename, projection = None, stringency = ValidationStringency.LENIENT)
+      adamContext.loadAlignments(path.toString, projection = None, stringency = ValidationStringency.LENIENT)
 
     val sequenceDictionary = alignmentRDD.sequences
 
