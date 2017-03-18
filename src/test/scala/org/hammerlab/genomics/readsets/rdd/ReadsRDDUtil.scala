@@ -1,10 +1,11 @@
 package org.hammerlab.genomics.readsets.rdd
 
+import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.hammerlab.genomics.bases.Bases
 import org.hammerlab.genomics.reads.{ MappedRead, ReadsUtil }
-import org.hammerlab.genomics.readsets.args.SingleSampleArgs
+import org.hammerlab.genomics.readsets.args.impl.SingleSampleArgs
 import org.hammerlab.genomics.readsets.io.{ InputConfig, TestInputConfig }
 import org.hammerlab.genomics.readsets.{ ReadSets, SampleId, SampleRead }
 import org.hammerlab.genomics.reference.Locus
@@ -14,6 +15,8 @@ trait ReadsRDDUtil
   extends ReadsUtil {
 
   def sc: SparkContext
+
+  implicit def stringToPath(path: String): Path = new Path(File(path))
 
   def makeReadsRDD(reads: (Bases, String, Locus)*): RDD[SampleRead] = makeReadsRDD(sampleId = 0, reads: _*)
 
@@ -26,24 +29,24 @@ trait ReadsRDDUtil
     )
 
   def loadTumorNormalReads(sc: SparkContext,
-                           tumorFile: String,
-                           normalFile: String): (Seq[MappedRead], Seq[MappedRead]) = {
+                           tumorPath: Path,
+                           normalPath: Path): (Seq[MappedRead], Seq[MappedRead]) = {
     val config = TestInputConfig.mapped(nonDuplicate = true, passedVendorQualityChecks = true)
     (
-      loadReadsRDD(sc,  tumorFile, config = config).mappedReads.collect(),
-      loadReadsRDD(sc, normalFile, config = config).mappedReads.collect()
+      loadReadsRDD(sc,  tumorPath, config = config).mappedReads.collect(),
+      loadReadsRDD(sc, normalPath, config = config).mappedReads.collect()
     )
   }
 
   def loadReadsRDD(sc: SparkContext,
-                   filename: String,
+                   path: Path,
                    config: InputConfig = InputConfig.empty): ReadsRDD = {
     assert(sc != null)
     assert(sc.hadoopConfiguration != null)
     val args = new SingleSampleArgs {}
 
     // Load resource File.
-    args.reads = File(filename)
+    args.reads = path
 
     val ReadSets(reads, _, _) =
       ReadSets(

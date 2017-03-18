@@ -2,14 +2,14 @@ package org.hammerlab.genomics.readsets.rdd
 
 import org.apache.spark.rdd.RDD
 import org.hammerlab.genomics.reads.{ MappedRead, PairedRead, Read }
-import org.hammerlab.genomics.readsets.io.Input
+import org.hammerlab.genomics.readsets.io.Sample
 
 /**
  * A thin wrapper around an RDD[Read], with helpers to filter to mapped and paired-mapped reads.
  */
-case class ReadsRDD(reads: RDD[Read], input: Input) {
+case class ReadsRDD(reads: RDD[Read], sample: Sample) {
 
-  val basename = input.path.getName
+  val basename = sample.toString
   val shortName = basename.substring(0, math.min(100, basename.length))
 
   lazy val mappedReads =

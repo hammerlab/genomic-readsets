@@ -1,11 +1,30 @@
 package org.hammerlab.genomics.readsets.io
 
 import org.apache.hadoop.fs.Path
-import org.hammerlab.genomics.readsets.{ SampleId, SampleName }
+import org.hammerlab.genomics.readsets.io.Sample.{ Id, Name }
 
-class Input(val id: SampleId, val sampleName: SampleName, val path: Path) extends Serializable
+trait Input
+  extends Sample {
+  def path: Path
+}
+
+private case class InputImpl(id: Id,
+                             name: Name,
+                             path: Path)
+  extends Input
 
 object Input {
-  def apply(id: SampleId, sampleName: SampleName, path: Path): Input = new Input(id, sampleName, path)
-  def unapply(input: Input): Option[(SampleId, SampleName, Path)] = Some((input.id, input.sampleName, input.path))
+  def apply(id: Id,
+            name: Name,
+            path: Path): Input =
+    InputImpl(id, name, path)
+
+  def unapply(input: Input): Option[(Id, Name, Path)] =
+    Some(
+      (
+        input.id,
+        input.name,
+        input.path
+      )
+    )
 }

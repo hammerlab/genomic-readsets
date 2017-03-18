@@ -1,13 +1,13 @@
 package org.hammerlab.genomics.readsets.io
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.spark.network.util.JavaUtils
 import org.hammerlab.args4s.{ IntOptionHandler, StringOptionHandler }
 import org.hammerlab.genomics.loci.args.LociArgs
-import org.hammerlab.genomics.loci.parsing.{ All, ParsedLoci }
-import org.kohsuke.args4j.{ Option => Args4jOption }
+import org.kohsuke.args4j.{ Option ⇒ Args4jOption }
 
-trait ReadFilterArgs extends LociArgs {
+trait ReadFilterArgs
+  extends ReadFilters
+    with LociArgs {
+
   @Args4jOption(
     name = "--min-alignment-quality",
     usage = "Minimum read mapping quality for a read (Phred-scaled)",
@@ -45,21 +45,5 @@ trait ReadFilterArgs extends LociArgs {
     usage = "Maximum HDFS split size",
     handler = classOf[StringOptionHandler]
   )
-  var splitSize: Option[String] = None
-
-  def parseConfig(hadoopConfiguration: Configuration): InputConfig = {
-    val loci = ParsedLoci.fromArgs(lociStrOpt, lociFileOpt, hadoopConfiguration)
-    InputConfig(
-      overlapsLociOpt =
-        if (onlyMappedReads)
-          Some(All)
-        else
-          loci,
-      nonDuplicate = !includeDuplicates,
-      passedVendorQualityChecks = !includeFailedQualityChecks,
-      isPaired = !includeSingleEnd,
-      minAlignmentQualityOpt = minAlignmentQualityOpt,
-      maxSplitSizeOpt = splitSize.map(JavaUtils.byteStringAsBytes)
-    )
-  }
+  var splitSizeOpt: Option[String] = None
 }

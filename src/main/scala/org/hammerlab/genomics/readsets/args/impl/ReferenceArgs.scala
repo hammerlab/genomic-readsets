@@ -1,11 +1,7 @@
-package org.hammerlab.genomics.readsets.args
+package org.hammerlab.genomics.readsets.args.impl
 
+import org.hammerlab.genomics.readsets.args.base.HasReference
 import org.kohsuke.args4j.{ Option ⇒ Args4jOption }
-
-trait HasReference {
-  def referencePath: String
-  def referenceIsPartial: Boolean
-}
 
 trait ReferenceArgs extends HasReference {
   @Args4jOption(
