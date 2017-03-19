@@ -1,7 +1,5 @@
 package org.hammerlab.genomics.readsets
 
-import java.io.File
-
 import grizzled.slf4j.Logging
 import htsjdk.samtools.ValidationStringency
 import org.apache.hadoop.fs.Path
@@ -13,8 +11,8 @@ import org.bdgenomics.adam.models.SequenceDictionary
 import org.bdgenomics.adam.rdd.ADAMContext
 import org.hammerlab.genomics.loci.set.LociSet
 import org.hammerlab.genomics.reads.Read
-import org.hammerlab.genomics.readsets.args.{ Base ⇒ BaseArgs }
-import org.hammerlab.genomics.readsets.io.{ Input, InputConfig }
+import org.hammerlab.genomics.readsets.args.base.Base
+import org.hammerlab.genomics.readsets.io.{ Input, InputConfig, Sample }
 import org.hammerlab.genomics.readsets.rdd.ReadsRDD
 import org.hammerlab.genomics.reference.{ ContigLengths, ContigName, Locus }
 import org.seqdoop.hadoop_bam.util.SAMHeaderReader
@@ -32,10 +30,10 @@ case class ReadSets(readsRDDs: PerSample[ReadsRDD],
                     contigLengths: ContigLengths)
   extends PerSample[ReadsRDD] {
 
-  def inputs: PerSample[Input] = readsRDDs.map(_.input)
+  def samples: PerSample[Sample] = readsRDDs.map(_.sample)
 
   def numSamples: NumSamples = readsRDDs.length
-  def sampleNames: PerSample[String] = inputs.map(_.sampleName)
+  def sampleNames: PerSample[String] = samples.map(_.name)
 
   override def length: NumSamples = readsRDDs.length
   override def apply(sampleId: SampleId): ReadsRDD = readsRDDs(sampleId)
@@ -57,7 +55,7 @@ case class ReadSets(readsRDDs: PerSample[ReadsRDD],
 
 object ReadSets extends Logging {
 
-  def apply(sc: SparkContext, args: BaseArgs)(implicit cf: ContigName.Factory): (ReadSets, LociSet) = {
+  def apply(sc: SparkContext, args: Base)(implicit cf: ContigName.Factory): (ReadSets, LociSet) = {
     val config = args.parseConfig(sc.hadoopConfiguration)
     val readsets = apply(sc, args.inputs, config, !args.noSequenceDictionary)
     (readsets, LociSet(config.loci, readsets.contigLengths))
@@ -67,7 +65,7 @@ object ReadSets extends Logging {
     * Load reads from multiple files, merging their sequence dictionaries and verifying that they are consistent.
     */
   def apply(sc: SparkContext,
-            inputs: PerSample[Input],
+            inputs: Inputs,
             config: InputConfig,
             contigLengthsFromDictionary: Boolean = true)(implicit cf: ContigName.Factory): ReadSets =
     apply(sc, inputs.map((_, config)), contigLengthsFromDictionary)
@@ -83,9 +81,9 @@ object ReadSets extends Logging {
 
     val (readsRDDs, sequenceDictionaries) =
       (for {
-        (Input(sampleId, _, filename), config) <- inputsAndFilters
+        (Input(id, _, path), config) <- inputsAndFilters
       } yield
-        load(filename, sc, sampleId, config)
+        load(path, sc, id, config)
       ).unzip
 
     val sequenceDictionary = mergeSequenceDictionaries(inputs, sequenceDictionaries)
@@ -124,21 +122,21 @@ object ReadSets extends Logging {
    * Given a filename and a spark context, return a pair (RDD, SequenceDictionary), where the first element is an RDD
    * of Reads, and the second element is the Sequence Dictionary giving info (e.g. length) about the contigs in the BAM.
    *
-   * @param filename name of file containing reads
+   * @param path name of file containing reads
    * @param sc spark context
    * @param config config to apply
    * @return
    */
-  private[readsets] def load(filename: String,
+  private[readsets] def load(path: Path,
                              sc: SparkContext,
                              sampleId: Int,
                              config: InputConfig)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
 
     val (allReads, sequenceDictionary) =
-      if (filename.endsWith(".bam") || filename.endsWith(".sam"))
-        loadFromBAM(filename, sc, sampleId, config)
+      if (path.getName.endsWith(".bam") || path.getName.endsWith(".sam"))
+        loadFromBAM(path, sc, sampleId, config)
       else
-        loadFromADAM(filename, sc, sampleId, config)
+        loadFromADAM(path, sc, sampleId, config)
 
     val reads = filterRDD(allReads, config, sequenceDictionary)
 
@@ -146,14 +144,12 @@ object ReadSets extends Logging {
   }
 
   /** Returns an RDD of Reads and SequenceDictionary from reads in BAM format **/
-  private def loadFromBAM(filename: String,
+  private def loadFromBAM(path: Path,
                           sc: SparkContext,
                           sampleId: Int,
                           config: InputConfig)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
 
-    val path = new Path(filename)
-
-    val basename = new File(filename).getName
+    val basename = path.getName
     val shortName = basename.substring(0, math.min(basename.length, 100))
 
     val conf = sc.hadoopConfiguration
@@ -171,7 +167,7 @@ object ReadSets extends Logging {
       .overlapsLociOpt
       .fold(conf.unset(BAMInputFormat.INTERVALS_PROPERTY)) (
         overlapsLoci =>
-          if (filename.endsWith(".bam")) {
+          if (basename.endsWith(".bam")) {
             val contigLengths = getContigLengths(sequenceDictionary)
 
             val bamIndexIntervals =
@@ -181,16 +177,16 @@ object ReadSets extends Logging {
               ).toHtsJDKIntervals
 
             BAMInputFormat.setIntervals(conf, bamIndexIntervals)
-          } else if (filename.endsWith(".sam")) {
-            warn(s"Loading SAM file: $filename with intervals specified. This requires parsing the entire file.")
+          } else if (basename.endsWith(".sam")) {
+            warn(s"Loading SAM file: $path with intervals specified. This requires parsing the entire file.")
           } else {
-            throw new IllegalArgumentException(s"File $filename is not a BAM or SAM file")
+            throw new IllegalArgumentException(s"File $path is not a BAM or SAM file")
           }
       )
 
     val reads: RDD[Read] =
       sc
-        .newAPIHadoopFile[LongWritable, SAMRecordWritable, AnySAMInputFormat](filename)
+        .newAPIHadoopFile[LongWritable, SAMRecordWritable, AnySAMInputFormat](path.toString)
         .setName(s"Hadoop file: $shortName")
         .values
         .setName(s"Hadoop reads: $shortName")
@@ -201,17 +197,17 @@ object ReadSets extends Logging {
   }
 
   /** Returns an RDD of Reads and SequenceDictionary from reads in ADAM format **/
-  private def loadFromADAM(filename: String,
+  private def loadFromADAM(path: Path,
                            sc: SparkContext,
                            sampleId: Int,
                            config: InputConfig)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
 
-    logger.info(s"Using ADAM to read: $filename")
+    logger.info(s"Using ADAM to read: $path")
 
     val adamContext: ADAMContext = sc
 
     val alignmentRDD =
-      adamContext.loadAlignments(filename, projection = None, stringency = ValidationStringency.LENIENT)
+      adamContext.loadAlignments(path.toString, projection = None, stringency = ValidationStringency.LENIENT)
 
     val sequenceDictionary = alignmentRDD.sequences
 
@@ -241,35 +237,36 @@ object ReadSets extends Logging {
    * @param dicts SequenceDictionaries that have been parsed from @filenames.
    * @return a SequenceDictionary that has been merged and validated from the inputs.
    */
-  private[readsets] def mergeSequenceDictionaries(inputs: Seq[Input],
+  private[readsets] def mergeSequenceDictionaries(inputs: Inputs,
                                                   dicts: Seq[SequenceDictionary]): SequenceDictionary = {
     val records =
       (for {
-        (input, dict) <- inputs.zip(dicts)
-        record <- dict.records
-      } yield {
-        input -> record
-      })
+        (input, dict) ← inputs.zip(dicts)
+        record ← dict.records
+      } yield
+        input → record
+      )
       .groupBy(_._2.name)
       .values
-      .map(values => {
+      .map { values ⇒
         val (input, record) = values.head
 
         // Verify that all records for a given contig are equal.
         values.tail.toList.filter(_._2 != record) match {
-          case Nil =>
-          case mismatched =>
+          case Nil ⇒
+          case mismatched ⇒
             throw new IllegalArgumentException(
               (
                 s"Conflicting sequence records for ${record.name}:" ::
-                s"${input.path}: $record" ::
+                s"$input: $record" ::
                 mismatched.map { case (otherFile, otherRecord) => s"$otherFile: $otherRecord" }
-              ).mkString("\n\t")
+              )
+              .mkString("\n\t")
             )
         }
 
         record
-      })
+      }
 
     new SequenceDictionary(records.toVector).sorted
   }
@@ -286,21 +283,22 @@ object ReadSets extends Logging {
      * attribute cannot be serialized.
      */
     var result = reads
+
     config
       .overlapsLociOpt
-      .foreach(overlapsLoci => {
+      .foreach { overlapsLoci ⇒
         val contigLengths = getContigLengths(sequenceDictionary)
         val loci = LociSet(overlapsLoci, contigLengths)
         val broadcastLoci = reads.sparkContext.broadcast(loci)
         result = result.filter(_.asMappedRead.exists(broadcastLoci.value.intersects))
-      })
+      }
 
     if (config.nonDuplicate) result = result.filter(!_.isDuplicate)
     if (config.passedVendorQualityChecks) result = result.filter(!_.failedVendorQualityChecks)
     if (config.isPaired) result = result.filter(_.isPaired)
 
     config.minAlignmentQualityOpt.foreach(
-      minAlignmentQuality =>
+      minAlignmentQuality ⇒
         result =
           result.filter(
             _.asMappedRead

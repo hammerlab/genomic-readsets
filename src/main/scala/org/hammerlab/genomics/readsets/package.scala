@@ -2,6 +2,7 @@ package org.hammerlab.genomics
 
 import org.apache.spark.rdd.RDD
 import org.hammerlab.genomics.reads.MappedRead
+import org.hammerlab.genomics.readsets.io.{ Input, Sample }
 import org.hammerlab.genomics.reference.Region
 
 /**
@@ -15,12 +16,14 @@ import org.hammerlab.genomics.reference.Region
 package object readsets {
   type PerSample[+A] = IndexedSeq[A]
 
-  type SampleId = Int
-  type NumSamples = Int
+  type SampleId = Sample.Id
+  type NumSamples = Sample.Id
 
-  type SampleName = String
+  type SampleName = Sample.Name
 
   type SampleRegion = Region with HasSampleId
+
+  type Inputs = PerSample[Input]
 
   implicit class SampleRead(val t: (SampleId, MappedRead))
     extends AnyVal

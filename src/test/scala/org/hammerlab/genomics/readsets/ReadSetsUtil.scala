@@ -4,7 +4,7 @@ import org.apache.spark.SparkContext
 import org.hammerlab.genomics.loci.parsing.ParsedLoci
 import org.hammerlab.genomics.loci.set.LociSet
 import org.hammerlab.genomics.reads.ReadsUtil
-import org.hammerlab.genomics.readsets.io.{ Input, TestInputConfig }
+import org.hammerlab.genomics.readsets.io.TestInputConfig
 import org.hammerlab.genomics.reference.test.ContigLengthsUtil
 
 trait ReadSetsUtil
@@ -13,10 +13,10 @@ trait ReadSetsUtil
 
   def sc: SparkContext
 
-  def makeReadSets(inputs: PerSample[Input], lociStr: String): (ReadSets, LociSet) =
+  def makeReadSets(inputs: Inputs, lociStr: String): (ReadSets, LociSet) =
     makeReadSets(inputs, ParsedLoci(lociStr))
 
-  def makeReadSets(inputs: PerSample[Input], loci: ParsedLoci): (ReadSets, LociSet) = {
+  def makeReadSets(inputs: Inputs, loci: ParsedLoci): (ReadSets, LociSet) = {
     val readsets = ReadSets(sc, inputs, config = TestInputConfig(loci))
     (readsets, LociSet(loci, readsets.contigLengths))
   }
