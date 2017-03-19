@@ -8,6 +8,7 @@ trait PathPrefixArg {
   self: PrefixedPathsBase ⇒
   @args4j.Option(
     name = "--dir",
+    aliases = Array("-d"),
     handler = classOf[PathPrefixOptionHandler],
     usage = "When set, relative paths will be prefixed with this path"
   )
