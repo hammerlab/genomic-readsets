@@ -1,8 +1,9 @@
 package org.hammerlab.genomics.readsets
 
+import java.nio.file.Path
+
 import grizzled.slf4j.Logging
 import htsjdk.samtools.ValidationStringency
-import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.SparkContext
@@ -133,7 +134,7 @@ object ReadSets extends Logging {
                              config: InputConfig)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
 
     val (allReads, sequenceDictionary) =
-      if (path.getName.endsWith(".bam") || path.getName.endsWith(".sam"))
+      if (path.toString.endsWith(".bam") || path.toString.endsWith(".sam"))
         loadFromBAM(path, sc, sampleId, config)
       else
         loadFromADAM(path, sc, sampleId, config)
@@ -149,11 +150,11 @@ object ReadSets extends Logging {
                           sampleId: Int,
                           config: InputConfig)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
 
-    val basename = path.getName
+    val basename = path.getFileName().toString
     val shortName = basename.substring(0, math.min(basename.length, 100))
 
     val conf = sc.hadoopConfiguration
-    val samHeader = SAMHeaderReader.readSAMHeaderFrom(path, conf)
+    val samHeader = SAMHeaderReader.readSAMHeaderFrom(new org.apache.hadoop.fs.Path(path.toUri), conf)
     val sequenceDictionary = SequenceDictionary(samHeader)
 
     config

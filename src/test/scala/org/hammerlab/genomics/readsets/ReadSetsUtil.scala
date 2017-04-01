@@ -13,16 +13,8 @@ trait ReadSetsUtil
 
   def sc: SparkContext
 
-  def makeReadSets(inputs: Inputs, lociStr: String): (ReadSets, LociSet) =
-    makeReadSets(inputs, ParsedLoci(lociStr))
-
   def makeReadSets(inputs: Inputs, loci: ParsedLoci): (ReadSets, LociSet) = {
     val readsets = ReadSets(sc, inputs, config = TestInputConfig(loci))
     (readsets, LociSet(loci, readsets.contigLengths))
   }
-}
-
-object ReadSetsUtil {
-  type TestRead = (String, Int, Int, Int)
-  type TestReads = Seq[TestRead]
 }

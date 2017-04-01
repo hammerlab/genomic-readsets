@@ -1,6 +1,7 @@
 package org.hammerlab.genomics.readsets.args.base
 
-import org.apache.hadoop.fs.Path
+import java.nio.file.Path
+
 import org.hammerlab.genomics.readsets.args.path.{ PathPrefix, UnprefixedPath }
 
 trait PrefixedPathsBase

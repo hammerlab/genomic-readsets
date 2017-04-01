@@ -1,15 +1,25 @@
 package org.hammerlab.genomics.readsets.args.impl
 
-import org.hammerlab.genomics.readsets.args.base.HasReference
+import java.nio.file.Path
+
+import org.hammerlab.genomics.readsets.args.base.{ HasReference, PrefixedPathsBase }
+import org.hammerlab.genomics.readsets.args.path.{ UnprefixedPath, UnprefixedPathHandler }
 import org.kohsuke.args4j.{ Option ⇒ Args4jOption }
 
-trait ReferenceArgs extends HasReference {
+trait ReferenceArgs
+  extends HasReference {
+
+  self: PrefixedPathsBase ⇒
+
   @Args4jOption(
     name = "--reference",
+    aliases = Array("-r"),
     required = true,
-    usage = "Local path to a reference FASTA file"
+    handler = classOf[UnprefixedPathHandler],
+    usage = "Path to a reference FASTA file"
   )
-  var referencePath: String = _
+  private var _referencePath: UnprefixedPath = _
+  def referencePath: Path = _referencePath
 
   @Args4jOption(
     name = "--partial-reference",
