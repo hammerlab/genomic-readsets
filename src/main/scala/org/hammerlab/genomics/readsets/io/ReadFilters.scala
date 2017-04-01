@@ -16,7 +16,7 @@ trait ReadFilters
   def splitSizeOpt: Option[String]
 
   def parseConfig(hadoopConfiguration: Configuration): InputConfig = {
-    val loci = ParsedLoci.fromArgs(lociStrOpt, lociFileOpt, hadoopConfiguration)
+    val loci = ParsedLoci(lociStrOpt, lociFileOpt, hadoopConfiguration)
     InputConfig(
       overlapsLociOpt =
         if (onlyMappedReads)

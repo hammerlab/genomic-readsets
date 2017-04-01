@@ -1,8 +1,7 @@
 package org.hammerlab.genomics.readsets.args.base
 
-import java.nio.file.Path
-
 import org.hammerlab.genomics.readsets.args.path.{ PathPrefix, UnprefixedPath }
+import org.hammerlab.paths.Path
 
 trait PrefixedPathsBase
   extends Base {

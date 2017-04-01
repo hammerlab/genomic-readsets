@@ -1,9 +1,8 @@
 package org.hammerlab.genomics.readsets.args.base
 
-import java.nio.file.Path
-
 import org.hammerlab.genomics.readsets.Inputs
 import org.hammerlab.genomics.readsets.io.{ Input, ReadFilters, Sample }
+import org.hammerlab.paths.Path
 
 trait InputArgs {
   def paths: Array[Path]

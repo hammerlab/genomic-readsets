@@ -6,7 +6,7 @@ import org.kohsuke.args4j.{ CmdLineParser, OptionDef }
 
 /**
  * Type-class for a path-prefix that can be added by default to [[UnprefixedPath]]s to generate
- * [[org.apache.hadoop.fs.Path]]s.
+ * [[org.hammerlab.paths.Path]]s.
  */
 case class PathPrefix(value: String)
 

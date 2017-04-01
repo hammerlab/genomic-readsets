@@ -1,8 +1,7 @@
 package org.hammerlab.genomics.readsets.io
 
-import java.nio.file.Path
-
 import org.hammerlab.genomics.readsets.io.Sample.{ Id, Name }
+import org.hammerlab.paths.Path
 
 trait Input
   extends Sample {

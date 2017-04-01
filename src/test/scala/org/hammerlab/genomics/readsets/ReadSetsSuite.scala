@@ -1,7 +1,5 @@
 package org.hammerlab.genomics.readsets
 
-import java.nio.file.{ Path, Paths }
-
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.bdgenomics.adam.models.{ SequenceDictionary, SequenceRecord }
 import org.bdgenomics.adam.rdd.{ ADAMContext, ADAMSaveAnyArgs }
@@ -13,6 +11,7 @@ import org.hammerlab.genomics.readsets.io.{ Input, InputConfig, TestInputConfig 
 import org.hammerlab.genomics.readsets.rdd.ReadsRDDUtil
 import org.hammerlab.genomics.reference.test.ClearContigNames
 import org.hammerlab.genomics.reference.test.LociConversions._
+import org.hammerlab.paths.Path
 import org.hammerlab.spark.test.suite.{ KryoSparkSuite, SparkSerialization }
 import org.hammerlab.test.matchers.LazyAssert
 import org.hammerlab.test.resources.File
@@ -194,8 +193,8 @@ class ReadSetsSuite
 
   val inputs =
     Vector(
-      Input(0, "f1", Paths.get("fake/path/1")),
-      Input(1, "f2", Paths.get("fake/path/2"))
+      Input(0, "f1", Path("fake/path/1")),
+      Input(1, "f2", Path("fake/path/2"))
     )
 
   test("merge identical seqdicts") {
