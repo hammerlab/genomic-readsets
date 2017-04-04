@@ -1,6 +1,5 @@
 package org.hammerlab.genomics.readsets.args.path
 
-import org.apache.hadoop.fs.{ Path ⇒ HPath }
 import org.hammerlab.args4s.{ Handler, OptionHandler }
 import org.hammerlab.paths.Path
 import org.kohsuke.args4j.spi.Setter
@@ -11,25 +10,20 @@ import org.kohsuke.args4j.{ CmdLineParser, OptionDef }
  * [[org.hammerlab.paths.Path]].
  */
 case class UnprefixedPath(value: String) {
-  def buildPath(implicit prefixOpt: Option[PathPrefix]): Path =
+  def buildPath(implicit prefixOpt: Option[PathPrefix]): Path = {
+    val path = Path(value)
     prefixOpt match {
-      case Some(prefix) ⇒ Path(prefix.value) / value
-      case None ⇒ Path(value)
+      case Some(prefix) if !path.isAbsolute ⇒
+        Path(prefix.value) / value
+      case _ ⇒
+        path
     }
-
-//  def buildHadoopPath(implicit prefixOpt: Option[PathPrefix]): HPath =
-//    prefixOpt match {
-//      case Some(prefix) ⇒ buildPath
-//      case None ⇒ Paths.get(value)
-//    }
+  }
 }
 
 object UnprefixedPath {
   implicit def buildPath(unprefixedPath: UnprefixedPath)(implicit prefixOpt: Option[PathPrefix]): Path =
     unprefixedPath.buildPath
-
-//  implicit def buildHadoopPath(unprefixedPath: UnprefixedPath)(implicit prefixOpt: Option[PathPrefix]): HPath =
-//    unprefixedPath.buildHadoopPath
 }
 
 /**

@@ -13,6 +13,7 @@ deps ++= Seq(
   libs.value('htsjdk),
   libs.value('loci),
   libs.value('magic_rdds),
+  libs.value('paths),
   libs.value('slf4j),
   libs.value('spark_util)
 )
