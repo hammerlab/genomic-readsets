@@ -2,6 +2,7 @@ package org.hammerlab.genomics.readsets.args.impl
 
 import org.hammerlab.args4s.StringsOptionHandler
 import org.hammerlab.genomics.readsets.args.base.Base
+import org.hammerlab.genomics.readsets.io.Sample
 import org.kohsuke.args4j
 
 trait SampleNamesArg {
@@ -11,5 +12,5 @@ trait SampleNamesArg {
     handler = classOf[StringsOptionHandler],
     usage = "name1,…,nameN"
   )
-  var sampleNames: Array[String] = Array()
+  var sampleNames: Array[Sample.Name] = Array()
 }

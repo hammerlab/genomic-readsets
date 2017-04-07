@@ -1,19 +1,29 @@
 package org.hammerlab.genomics.readsets.args.path
 
-import org.apache.hadoop.fs.Path
 import org.hammerlab.args4s.{ Handler, OptionHandler }
+import org.hammerlab.paths.Path
 import org.kohsuke.args4j.spi.Setter
 import org.kohsuke.args4j.{ CmdLineParser, OptionDef }
 
 /**
- * Type-class for a path-string that must be joined against an optional [[PathPrefix]] to generate a [[Path]].
+ * Type-class for a path-string that must be joined against an optional [[PathPrefix]] to generate a
+ * [[org.hammerlab.paths.Path]].
  */
 case class UnprefixedPath(value: String) {
-  def buildPath(implicit prefixOpt: Option[PathPrefix]): Path =
+  def buildPath(implicit prefixOpt: Option[PathPrefix]): Path = {
+    val path = Path(value)
     prefixOpt match {
-      case Some(prefix) ⇒ new Path(prefix.value, value)
-      case None ⇒ new Path(value)
+      case Some(prefix) if !path.isAbsolute ⇒
+        Path(prefix.value) / value
+      case _ ⇒
+        path
     }
+  }
+}
+
+object UnprefixedPath {
+  implicit def buildPath(unprefixedPath: UnprefixedPath)(implicit prefixOpt: Option[PathPrefix]): Path =
+    unprefixedPath.buildPath
 }
 
 /**
@@ -27,7 +37,7 @@ class UnprefixedPathHandler(parser: CmdLineParser,
     option,
     setter,
     "PATH",
-    UnprefixedPath
+    UnprefixedPath(_)
   )
 
 /**
@@ -41,5 +51,5 @@ class UnprefixedPathOptionHandler(parser: CmdLineParser,
     option,
     setter,
     "PATH",
-    UnprefixedPath
+    UnprefixedPath(_)
   )

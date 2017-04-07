@@ -1,17 +1,13 @@
 package org.hammerlab.genomics.readsets.args.base
 
-import org.apache.hadoop.fs.Path
 import org.hammerlab.genomics.readsets.Inputs
-import org.hammerlab.genomics.readsets.io.{ Input, ReadFilters }
+import org.hammerlab.genomics.readsets.io.{ Input, ReadFilters, Sample }
+import org.hammerlab.paths.Path
 
-trait Base
-  extends ReadFilters {
-
-  def noSequenceDictionary: Boolean
-
+trait InputArgs {
   def paths: Array[Path]
 
-  def sampleNames: Array[String]
+  def sampleNames: Array[Sample.Name]
 
   lazy val inputs: Inputs =
     paths.indices.map(i ⇒
@@ -24,4 +20,10 @@ trait Base
         paths(i)
       )
     )
+}
+
+trait Base
+  extends ReadFilters
+    with InputArgs {
+  def noSequenceDictionary: Boolean
 }

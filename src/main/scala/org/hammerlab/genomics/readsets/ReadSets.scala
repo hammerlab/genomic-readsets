@@ -1,8 +1,8 @@
 package org.hammerlab.genomics.readsets
 
+import org.apache.hadoop.fs.{ Path ⇒ HPath }
 import grizzled.slf4j.Logging
 import htsjdk.samtools.ValidationStringency
-import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.SparkContext
@@ -15,7 +15,8 @@ import org.hammerlab.genomics.readsets.args.base.Base
 import org.hammerlab.genomics.readsets.io.{ Input, InputConfig, Sample }
 import org.hammerlab.genomics.readsets.rdd.ReadsRDD
 import org.hammerlab.genomics.reference.{ ContigLengths, ContigName, Locus }
-import org.seqdoop.hadoop_bam.util.SAMHeaderReader
+import org.hammerlab.paths.Path
+import org.seqdoop.hadoop_bam.util.SAMHeaderReader.readSAMHeaderFrom
 import org.seqdoop.hadoop_bam.{ AnySAMInputFormat, BAMInputFormat, SAMRecordWritable }
 
 import scala.collection.JavaConversions.seqAsJavaList
@@ -133,7 +134,7 @@ object ReadSets extends Logging {
                              config: InputConfig)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
 
     val (allReads, sequenceDictionary) =
-      if (path.getName.endsWith(".bam") || path.getName.endsWith(".sam"))
+      if (path.toString.endsWith(".bam") || path.toString.endsWith(".sam"))
         loadFromBAM(path, sc, sampleId, config)
       else
         loadFromADAM(path, sc, sampleId, config)
@@ -149,11 +150,11 @@ object ReadSets extends Logging {
                           sampleId: Int,
                           config: InputConfig)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
 
-    val basename = path.getName
+    val basename = path.basename
     val shortName = basename.substring(0, math.min(basename.length, 100))
 
     val conf = sc.hadoopConfiguration
-    val samHeader = SAMHeaderReader.readSAMHeaderFrom(path, conf)
+    val samHeader = readSAMHeaderFrom(new HPath(path.toUri), conf)
     val sequenceDictionary = SequenceDictionary(samHeader)
 
     config
@@ -165,22 +166,24 @@ object ReadSets extends Logging {
 
     config
       .overlapsLociOpt
-      .fold(conf.unset(BAMInputFormat.INTERVALS_PROPERTY)) (
-        overlapsLoci =>
-          if (basename.endsWith(".bam")) {
-            val contigLengths = getContigLengths(sequenceDictionary)
+      .fold(conf.unset(BAMInputFormat.INTERVALS_PROPERTY))(
+        overlapsLoci ⇒
+          path.extension match {
+            case "bam" ⇒
+              val contigLengths = getContigLengths(sequenceDictionary)
 
-            val bamIndexIntervals =
-              LociSet(
-                overlapsLoci,
-                contigLengths
-              ).toHtsJDKIntervals
+              val bamIndexIntervals =
+                LociSet(
+                  overlapsLoci,
+                  contigLengths
+                )
+                .toHtsJDKIntervals
 
-            BAMInputFormat.setIntervals(conf, bamIndexIntervals)
-          } else if (basename.endsWith(".sam")) {
-            warn(s"Loading SAM file: $path with intervals specified. This requires parsing the entire file.")
-          } else {
-            throw new IllegalArgumentException(s"File $path is not a BAM or SAM file")
+              BAMInputFormat.setIntervals(conf, bamIndexIntervals)
+            case "sam" ⇒
+              warn(s"Loading SAM file: $path with intervals specified. This requires parsing the entire file.")
+            case _ ⇒
+              throw new IllegalArgumentException(s"File $path is not a BAM or SAM file")
           }
       )
 
@@ -206,8 +209,7 @@ object ReadSets extends Logging {
 
     val adamContext: ADAMContext = sc
 
-    val alignmentRDD =
-      adamContext.loadAlignments(path.toString, projection = None, stringency = ValidationStringency.LENIENT)
+    val alignmentRDD = adamContext.loadAlignments(path, stringency = ValidationStringency.LENIENT)
 
     val sequenceDictionary = alignmentRDD.sequences
 

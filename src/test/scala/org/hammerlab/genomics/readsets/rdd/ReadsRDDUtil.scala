@@ -1,6 +1,5 @@
 package org.hammerlab.genomics.readsets.rdd
 
-import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.hammerlab.genomics.bases.Bases
@@ -9,14 +8,14 @@ import org.hammerlab.genomics.readsets.args.impl.SingleSampleArgs
 import org.hammerlab.genomics.readsets.io.{ InputConfig, TestInputConfig }
 import org.hammerlab.genomics.readsets.{ ReadSets, SampleId, SampleRead }
 import org.hammerlab.genomics.reference.Locus
-import org.hammerlab.test.resources.File
+import org.hammerlab.paths.Path
+import org.hammerlab.test.resources.PathUtil
 
 trait ReadsRDDUtil
-  extends ReadsUtil {
+  extends ReadsUtil
+    with PathUtil {
 
   def sc: SparkContext
-
-  implicit def stringToPath(path: String): Path = new Path(File(path))
 
   def makeReadsRDD(reads: (Bases, String, Locus)*): RDD[SampleRead] = makeReadsRDD(sampleId = 0, reads: _*)
 

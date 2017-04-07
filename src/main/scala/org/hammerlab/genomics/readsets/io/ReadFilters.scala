@@ -2,12 +2,11 @@ package org.hammerlab.genomics.readsets.io
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.network.util.JavaUtils.byteStringAsBytes
+import org.hammerlab.genomics.loci.args.LociInput
 import org.hammerlab.genomics.loci.parsing.{ All, ParsedLoci }
 
-trait ReadFilters {
-
-  def lociStrOpt: Option[String]
-  def lociFileOpt: Option[String]
+trait ReadFilters
+  extends LociInput {
 
   def onlyMappedReads: Boolean
   def includeDuplicates: Boolean
@@ -17,7 +16,7 @@ trait ReadFilters {
   def splitSizeOpt: Option[String]
 
   def parseConfig(hadoopConfiguration: Configuration): InputConfig = {
-    val loci = ParsedLoci.fromArgs(lociStrOpt, lociFileOpt, hadoopConfiguration)
+    val loci = ParsedLoci(lociStrOpt, lociFileOpt, hadoopConfiguration)
     InputConfig(
       overlapsLociOpt =
         if (onlyMappedReads)

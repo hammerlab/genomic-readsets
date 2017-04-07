@@ -1,17 +1,19 @@
 organization := "org.hammerlab.genomics"
 name := "readsets"
-version := "1.0.5-SNAPSHOT"
+version := "1.0.5"
 
 addSparkDeps
 
 deps ++= Seq(
   libs.value('adam_core),
   libs.value('args4j),
+  libs.value('args4s),
   libs.value('hadoop_bam),
   libs.value('iterators),
   libs.value('htsjdk),
   libs.value('loci),
   libs.value('magic_rdds),
+  libs.value('paths),
   libs.value('slf4j),
   libs.value('spark_util)
 )

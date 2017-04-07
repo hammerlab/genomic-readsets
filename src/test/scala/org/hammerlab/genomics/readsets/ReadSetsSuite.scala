@@ -1,6 +1,5 @@
 package org.hammerlab.genomics.readsets
 
-import org.apache.hadoop.fs.Path
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.bdgenomics.adam.models.{ SequenceDictionary, SequenceRecord }
 import org.bdgenomics.adam.rdd.{ ADAMContext, ADAMSaveAnyArgs }
@@ -12,6 +11,7 @@ import org.hammerlab.genomics.readsets.io.{ Input, InputConfig, TestInputConfig 
 import org.hammerlab.genomics.readsets.rdd.ReadsRDDUtil
 import org.hammerlab.genomics.reference.test.ClearContigNames
 import org.hammerlab.genomics.reference.test.LociConversions._
+import org.hammerlab.paths.Path
 import org.hammerlab.spark.test.suite.{ KryoSparkSuite, SparkSerialization }
 import org.hammerlab.test.matchers.LazyAssert
 import org.hammerlab.test.resources.File
@@ -41,12 +41,12 @@ class ReadSetsSuite
     }
 
     val lociAndExpectedCounts = Seq(
-      "20:9999900"    -> 0,
-      "20:9999901"    -> 1,
-      "20:9999912"    -> 2,
-      "20:0-10000000" -> 9,
-      "20:10270532"   -> 1,
-      "20:10270533"   -> 0
+      "20:9999900"    → 0,
+      "20:9999901"    → 1,
+      "20:9999912"    → 2,
+      "20:0-10000000" → 9,
+      "20:10270532"   → 1,
+      "20:10270533"   → 0
     )
 
     for {
@@ -141,7 +141,7 @@ class ReadSetsSuite
     val args = new ADAMSaveAnyArgs {
       override var sortFastqOutput: Boolean = false
       override var asSingleFile: Boolean = true
-      override var outputPath: String = adamOut
+      override def outputPath: Path = adamOut
       override var disableDictionaryEncoding: Boolean = false
       override var blockSize: Int = 1024
       override var pageSize: Int = 1024
@@ -151,8 +151,8 @@ class ReadSetsSuite
 
     adamRecords.saveAsParquet(args)
 
-    val inputArgs = new SingleSampleArgs {}
-    inputArgs.reads = new Path(adamOut)
+    val inputArgs = new SingleSampleArgs
+    inputArgs.reads = adamOut
 
     ReadSets(sc, inputArgs)
       ._1
@@ -193,8 +193,8 @@ class ReadSetsSuite
 
   val inputs =
     Vector(
-      Input(0, "f1", new Path("fake/path/1")),
-      Input(1, "f2", new Path("fake/path/2"))
+      Input(0, "f1", Path("fake/path/1")),
+      Input(1, "f2", Path("fake/path/2"))
     )
 
   test("merge identical seqdicts") {

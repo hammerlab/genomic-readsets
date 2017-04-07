@@ -10,7 +10,7 @@ import org.hammerlab.genomics.reference.Region
  * a single analysis.
  *
  * For example, a standard somatic caller will typically load and analyze separate "normal" and "tumor" samples, each
- * corresponding to an [[RDD[MappedRead]]], but which will also share metadata, like the
+ * corresponding to an `RDD[MappedRead]`, but which will also share metadata, like the
  * [[org.hammerlab.genomics.reference.ContigName]] of the reference they are mapped to.
  */
 package object readsets {
