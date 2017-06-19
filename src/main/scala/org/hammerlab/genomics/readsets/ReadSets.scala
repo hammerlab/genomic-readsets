@@ -1,25 +1,23 @@
 package org.hammerlab.genomics.readsets
 
-import org.apache.hadoop.fs.{ Path ⇒ HPath }
 import grizzled.slf4j.Logging
 import htsjdk.samtools.ValidationStringency
-import org.apache.hadoop.io.LongWritable
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.SequenceDictionary
 import org.bdgenomics.adam.rdd.ADAMContext
+import org.hammerlab.bam
+import org.hammerlab.bam.hadoop.LoadBam
+import org.hammerlab.bam.hadoop.LoadBam._
+import org.hammerlab.genomics.loci.parsing.All
 import org.hammerlab.genomics.loci.set.LociSet
 import org.hammerlab.genomics.reads.Read
 import org.hammerlab.genomics.readsets.args.base.Base
-import org.hammerlab.genomics.readsets.io.{ Input, InputConfig, Sample }
+import org.hammerlab.genomics.readsets.io.{ Config, Input, Sample }
 import org.hammerlab.genomics.readsets.rdd.ReadsRDD
 import org.hammerlab.genomics.reference.{ ContigLengths, ContigName, Locus }
+import org.hammerlab.hadoop
 import org.hammerlab.paths.Path
-import org.seqdoop.hadoop_bam.util.SAMHeaderReader.readSAMHeaderFrom
-import org.seqdoop.hadoop_bam.{ AnySAMInputFormat, BAMInputFormat, SAMRecordWritable }
-
-import scala.collection.JavaConversions.seqAsJavaList
 
 
 /**
@@ -67,7 +65,7 @@ object ReadSets extends Logging {
     */
   def apply(sc: SparkContext,
             inputs: Inputs,
-            config: InputConfig,
+            config: Config,
             contigLengthsFromDictionary: Boolean = true)(implicit cf: ContigName.Factory): ReadSets =
     apply(sc, inputs.map((_, config)), contigLengthsFromDictionary)
 
@@ -75,17 +73,18 @@ object ReadSets extends Logging {
    * Load reads from multiple files, allowing different filters to be applied to each file.
    */
   def apply(sc: SparkContext,
-            inputsAndFilters: PerSample[(Input, InputConfig)],
+            inputsAndFilters: PerSample[(Input, Config)],
             contigLengthsFromDictionary: Boolean)(implicit cf: ContigName.Factory): ReadSets = {
 
     val (inputs, _) = inputsAndFilters.unzip
 
     val (readsRDDs, sequenceDictionaries) =
       (for {
-        (Input(id, _, path), config) <- inputsAndFilters
+        (Input(id, _, path), config) ← inputsAndFilters
       } yield
         load(path, sc, id, config)
-      ).unzip
+      )
+      .unzip
 
     val sequenceDictionary = mergeSequenceDictionaries(inputs, sequenceDictionaries)
 
@@ -95,14 +94,14 @@ object ReadSets extends Logging {
       else
         sc.union(readsRDDs)
           .flatMap(_.asMappedRead)
-          .map(read => read.contigName -> read.end)
+          .map(read ⇒ read.contigName → read.end)
           .reduceByKey(_ max _)
           .collectAsMap()
           .toMap
 
     ReadSets(
       (for {
-        (reads, input) <- readsRDDs.zip(inputs)
+        (reads, input) ← readsRDDs.zip(inputs)
       } yield
        ReadsRDD(reads, input)
       )
@@ -131,7 +130,7 @@ object ReadSets extends Logging {
   private[readsets] def load(path: Path,
                              sc: SparkContext,
                              sampleId: Int,
-                             config: InputConfig)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
+                             config: Config)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
 
     val (allReads, sequenceDictionary) =
       if (path.toString.endsWith(".bam") || path.toString.endsWith(".sam"))
@@ -148,53 +147,41 @@ object ReadSets extends Logging {
   private def loadFromBAM(path: Path,
                           sc: SparkContext,
                           sampleId: Int,
-                          config: InputConfig)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
+                          config: Config)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
 
     val basename = path.basename
     val shortName = basename.substring(0, math.min(basename.length, 100))
 
-    val conf = sc.hadoopConfiguration
-    val samHeader = readSAMHeaderFrom(new HPath(path.toUri), conf)
-    val sequenceDictionary = SequenceDictionary(samHeader)
+    implicit val conf = sc.hadoopConfiguration
 
-    config
-      .maxSplitSizeOpt
-      .foreach(
-        maxSplitSize =>
-          conf.set(FileInputFormat.SPLIT_MAXSIZE, maxSplitSize.toString)
-      )
+    val hpath = hadoop.Path(path.uri)
 
-    config
-      .overlapsLociOpt
-      .fold(conf.unset(BAMInputFormat.INTERVALS_PROPERTY))(
-        overlapsLoci ⇒
-          path.extension match {
-            case "bam" ⇒
-              val contigLengths = getContigLengths(sequenceDictionary)
+    val contigLengths = bam.header.ContigLengths(hpath)
 
-              val bamIndexIntervals =
+    val sequenceDictionary = SequenceDictionary(contigLengths)
+
+    implicit val loadBamConfig =
+      LoadBam.Config(maxSplitSize = config.maxSplitSize)
+
+    val reads =
+      config
+        .overlapsLoci
+        .filterNot(_ == All)
+        .map(
+          loci ⇒
+            sc
+              .loadBamIntervals(
+                hpath,
                 LociSet(
-                  overlapsLoci,
-                  contigLengths
+                  loci,
+                  contigLengths.values.toMap
                 )
-                .toHtsJDKIntervals
-
-              BAMInputFormat.setIntervals(conf, bamIndexIntervals)
-            case "sam" ⇒
-              warn(s"Loading SAM file: $path with intervals specified. This requires parsing the entire file.")
-            case _ ⇒
-              throw new IllegalArgumentException(s"File $path is not a BAM or SAM file")
-          }
-      )
-
-    val reads: RDD[Read] =
-      sc
-        .newAPIHadoopFile[LongWritable, SAMRecordWritable, AnySAMInputFormat](path.toString)
-        .setName(s"Hadoop file: $shortName")
-        .values
-        .setName(s"Hadoop reads: $shortName")
-        .map(r => Read(r.get))
-        .setName(s"Guac reads: $shortName")
+              )
+        )
+        .getOrElse(
+          sc.loadBam(hpath)
+        )
+        .map(Read(_))
 
     (reads, sequenceDictionary)
   }
@@ -203,7 +190,7 @@ object ReadSets extends Logging {
   private def loadFromADAM(path: Path,
                            sc: SparkContext,
                            sampleId: Int,
-                           config: InputConfig)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
+                           config: Config)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
 
     logger.info(s"Using ADAM to read: $path")
 
@@ -276,7 +263,7 @@ object ReadSets extends Logging {
   /**
    * Apply filters to an RDD of reads.
    */
-  private def filterRDD(reads: RDD[Read], config: InputConfig, sequenceDictionary: SequenceDictionary): RDD[Read] = {
+  private def filterRDD(reads: RDD[Read], config: Config, sequenceDictionary: SequenceDictionary): RDD[Read] = {
     /* Note that the InputFilter properties are public, and some loaders directly apply
      * the filters as the reads are loaded, instead of filtering an existing RDD as we do here. If more filters
      * are added, be sure to update those implementations.
@@ -287,7 +274,7 @@ object ReadSets extends Logging {
     var result = reads
 
     config
-      .overlapsLociOpt
+    .overlapsLoci
       .foreach { overlapsLoci ⇒
         val contigLengths = getContigLengths(sequenceDictionary)
         val loci = LociSet(overlapsLoci, contigLengths)
@@ -299,7 +286,7 @@ object ReadSets extends Logging {
     if (config.passedVendorQualityChecks) result = result.filter(!_.failedVendorQualityChecks)
     if (config.isPaired) result = result.filter(_.isPaired)
 
-    config.minAlignmentQualityOpt.foreach(
+    config.minAlignmentQuality.foreach(
       minAlignmentQuality ⇒
         result =
           result.filter(

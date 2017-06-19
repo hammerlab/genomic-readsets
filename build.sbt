@@ -8,7 +8,7 @@ deps ++= Seq(
   libs.value('adam_core),
   libs.value('args4j),
   libs.value('args4s),
-  libs.value('hadoop_bam),
+  "org.hammerlab" %% "spark-bam" % "1.1.0-SNAPSHOT",
   libs.value('iterators),
   libs.value('htsjdk),
   libs.value('loci),

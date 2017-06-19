@@ -4,6 +4,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark.network.util.JavaUtils.byteStringAsBytes
 import org.hammerlab.genomics.loci.args.LociInput
 import org.hammerlab.genomics.loci.parsing.{ All, ParsedLoci }
+import org.hammerlab.hadoop.MaxSplitSize
 
 trait ReadFilters
   extends LociInput {
@@ -15,10 +16,10 @@ trait ReadFilters
   def minAlignmentQualityOpt: Option[Int]
   def splitSizeOpt: Option[String]
 
-  def parseConfig(hadoopConfiguration: Configuration): InputConfig = {
+  def parseConfig(implicit hadoopConfiguration: Configuration): Config = {
     val loci = ParsedLoci(lociStrOpt, lociFileOpt, hadoopConfiguration)
-    InputConfig(
-      overlapsLociOpt =
+    Config(
+      overlapsLoci =
         if (onlyMappedReads)
           Some(All)
         else
@@ -26,8 +27,11 @@ trait ReadFilters
       nonDuplicate = !includeDuplicates,
       passedVendorQualityChecks = !includeFailedQualityChecks,
       isPaired = !includeSingleEnd,
-      minAlignmentQualityOpt = minAlignmentQualityOpt,
-      maxSplitSizeOpt = splitSizeOpt.map(byteStringAsBytes)
+      minAlignmentQuality = minAlignmentQualityOpt,
+      maxSplitSize =
+        MaxSplitSize(
+          splitSizeOpt.map(byteStringAsBytes)
+        )
     )
   }
 }
