@@ -7,8 +7,7 @@ import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.SequenceDictionary
 import org.bdgenomics.adam.rdd.ADAMContext
 import org.hammerlab.bam
-import org.hammerlab.bam.hadoop.LoadBam
-import org.hammerlab.bam.hadoop.LoadBam._
+import org.hammerlab.bam.spark._
 import org.hammerlab.genomics.loci.parsing.All
 import org.hammerlab.genomics.loci.set.LociSet
 import org.hammerlab.genomics.reads.Read
@@ -16,7 +15,7 @@ import org.hammerlab.genomics.readsets.args.base.Base
 import org.hammerlab.genomics.readsets.io.{ Config, Input, Sample }
 import org.hammerlab.genomics.readsets.rdd.ReadsRDD
 import org.hammerlab.genomics.reference.{ ContigLengths, ContigName, Locus }
-import org.hammerlab.hadoop
+import org.hammerlab.hadoop.Configuration
 import org.hammerlab.paths.Path
 
 
@@ -149,19 +148,11 @@ object ReadSets extends Logging {
                           sampleId: Int,
                           config: Config)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
 
-    val basename = path.basename
-    val shortName = basename.substring(0, math.min(basename.length, 100))
+    implicit val conf: Configuration = sc.hadoopConfiguration
 
-    implicit val conf = sc.hadoopConfiguration
-
-    val hpath = hadoop.Path(path.uri)
-
-    val contigLengths = bam.header.ContigLengths(hpath)
+    val contigLengths = bam.header.ContigLengths(path)
 
     val sequenceDictionary = SequenceDictionary(contigLengths)
-
-    implicit val loadBamConfig =
-      LoadBam.Config(maxSplitSize = config.maxSplitSize)
 
     val reads =
       config
@@ -171,15 +162,20 @@ object ReadSets extends Logging {
           loci ⇒
             sc
               .loadBamIntervals(
-                hpath,
+                path,
                 LociSet(
                   loci,
                   contigLengths.values.toMap
-                )
+                ),
+                splitSize = config.maxSplitSize
               )
         )
         .getOrElse(
-          sc.loadBam(hpath)
+          sc
+            .loadReads(
+              path,
+              splitSize = config.maxSplitSize
+            )
         )
         .map(Read(_))
 

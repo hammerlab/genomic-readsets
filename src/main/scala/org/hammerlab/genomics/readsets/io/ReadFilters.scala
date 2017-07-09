@@ -1,10 +1,10 @@
 package org.hammerlab.genomics.readsets.io
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.spark.network.util.JavaUtils.byteStringAsBytes
+import org.hammerlab.bytes.Bytes
 import org.hammerlab.genomics.loci.args.LociInput
 import org.hammerlab.genomics.loci.parsing.{ All, ParsedLoci }
-import org.hammerlab.hadoop.MaxSplitSize
+import org.hammerlab.hadoop.Configuration
+import org.hammerlab.hadoop.splits.MaxSplitSize
 
 trait ReadFilters
   extends LociInput {
@@ -14,10 +14,10 @@ trait ReadFilters
   def includeFailedQualityChecks: Boolean
   def includeSingleEnd: Boolean
   def minAlignmentQualityOpt: Option[Int]
-  def splitSizeOpt: Option[String]
+  def splitSizeOpt: Option[Bytes]
 
-  def parseConfig(implicit hadoopConfiguration: Configuration): Config = {
-    val loci = ParsedLoci(lociStrOpt, lociFileOpt, hadoopConfiguration)
+  def parseConfig(implicit conf: Configuration): Config = {
+    val loci = ParsedLoci(lociStrOpt, lociFileOpt)
     Config(
       overlapsLoci =
         if (onlyMappedReads)
@@ -30,7 +30,7 @@ trait ReadFilters
       minAlignmentQuality = minAlignmentQualityOpt,
       maxSplitSize =
         MaxSplitSize(
-          splitSizeOpt.map(byteStringAsBytes)
+          splitSizeOpt
         )
     )
   }

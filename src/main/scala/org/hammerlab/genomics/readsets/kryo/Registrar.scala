@@ -1,12 +1,9 @@
-package org.hammerlab.genomics.readsets
-
-import java.util
+package org.hammerlab.genomics.readsets.kryo
 
 import com.esotericsoftware.kryo.Kryo
-import htsjdk.samtools.{ SAMProgramRecord, SAMReadGroupRecord, SAMSequenceDictionary, SAMSequenceRecord }
 import org.apache.spark.serializer.KryoRegistrator
 import org.hammerlab.bam
-import org.hammerlab.bam.header.ContigLengths
+import org.hammerlab.genomics.readsets.SampleRead
 import org.hammerlab.genomics.{ loci, reads, reference }
 
 class Registrar extends KryoRegistrator {
@@ -20,6 +17,6 @@ class Registrar extends KryoRegistrator {
     kryo.register(classOf[SampleRead])
     kryo.register(classOf[Array[SampleRead]])
 
-    bam.kryo.Registrar.registerClasses(kryo)
+    new bam.kryo.Registrar().registerClasses(kryo)
   }
 }

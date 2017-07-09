@@ -1,8 +1,8 @@
 package org.hammerlab.genomics.readsets.io
 
-import org.apache.hadoop.conf.Configuration
 import org.hammerlab.genomics.loci.parsing.{ All, ParsedLoci }
-import org.hammerlab.hadoop.MaxSplitSize
+import org.hammerlab.hadoop.Configuration
+import org.hammerlab.hadoop.splits.MaxSplitSize
 
 object TestInputConfig {
   def mapped(nonDuplicate: Boolean = false,
@@ -16,7 +16,10 @@ object TestInputConfig {
       nonDuplicate,
       passedVendorQualityChecks,
       isPaired,
-      if (minAlignmentQuality > 0) Some(minAlignmentQuality) else None,
+      if (minAlignmentQuality > 0)
+        Some(minAlignmentQuality)
+      else
+        None,
       maxSplitSize = MaxSplitSize()
     )
 
@@ -32,7 +35,10 @@ object TestInputConfig {
       nonDuplicate,
       passedVendorQualityChecks,
       isPaired,
-      if (minAlignmentQuality > 0) Some(minAlignmentQuality) else None,
+      if (minAlignmentQuality > 0)
+        Some(minAlignmentQuality)
+      else
+        None,
       maxSplitSize = MaxSplitSize()
     )
 }

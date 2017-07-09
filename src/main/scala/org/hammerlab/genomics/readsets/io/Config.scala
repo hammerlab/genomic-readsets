@@ -1,8 +1,8 @@
 package org.hammerlab.genomics.readsets.io
 
-import org.apache.hadoop.conf.Configuration
 import org.hammerlab.genomics.loci.parsing.{ All, ParsedLoci }
-import org.hammerlab.hadoop.{ FileSplits, MaxSplitSize }
+import org.hammerlab.hadoop.Configuration
+import org.hammerlab.hadoop.splits.MaxSplitSize
 
 /**
  * Configuring how/which reads are loaded can be an important optimization.
@@ -24,8 +24,7 @@ case class Config(overlapsLoci: Option[ParsedLoci],
                   passedVendorQualityChecks: Boolean,
                   isPaired: Boolean,
                   minAlignmentQuality: Option[Int],
-                  maxSplitSize: MaxSplitSize)
-  extends FileSplits.Config {
+                  maxSplitSize: MaxSplitSize) {
   def loci = overlapsLoci.getOrElse(All)
 }
 

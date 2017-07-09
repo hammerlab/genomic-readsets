@@ -8,6 +8,7 @@ import org.hammerlab.genomics.reads.{ MappedRead, Read }
 import org.hammerlab.genomics.readsets.ReadSets.mergeSequenceDictionaries
 import org.hammerlab.genomics.readsets.args.impl.SingleSampleArgs
 import org.hammerlab.genomics.readsets.io.{ Config, Input, TestInputConfig }
+import org.hammerlab.genomics.readsets.kryo.Registrar
 import org.hammerlab.genomics.readsets.rdd.ReadsRDDUtil
 import org.hammerlab.genomics.reference.test.ClearContigNames
 import org.hammerlab.genomics.reference.test.LociConversions._
@@ -17,11 +18,13 @@ import org.hammerlab.test.matchers.LazyAssert
 import org.hammerlab.test.resources.File
 
 class ReadSetsSuite
-  extends KryoSparkSuite(classOf[Registrar])
+  extends KryoSparkSuite
     with SparkSerialization
     with LazyAssert
     with ClearContigNames
     with ReadsRDDUtil {
+
+  register(new Registrar)
 
   test("test BAM filtering by loci") {
 
