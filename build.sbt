@@ -7,7 +7,7 @@ addSparkDeps
 deps ++= Seq(
   adam % "0.23.2-SNAPSHOT",
   args4j,
-  args4s % "1.2.3",
+  args4s % "1.2.4-SNAPSHOT",
   iterators % "1.3.0-SNAPSHOT",
   htsjdk,
   loci % "2.0.0-SNAPSHOT",
@@ -20,14 +20,14 @@ deps ++= Seq(
 
 compileAndTestDeps ++= Seq(
   reads % "1.0.6-SNAPSHOT",
-  reference % "1.3.1-SNAPSHOT"
+  reference % "1.4.0-SNAPSHOT"
 )
 
-testDeps += genomic_utils % "1.2.3"
+testDeps += genomic_utils % "1.3.0-SNAPSHOT"
 
 // org.hammerlab.genomics:reads::tests uses org.hammerlab.genomics:utils::{compile,test}, but test-JAR deps don't
 // propagate trans-deps like non-classified ones.
-testTestDeps += genomic_utils % "1.2.3"
+testTestDeps += genomic_utils % "1.3.0-SNAPSHOT"
 
 testUtilsVersion := "1.2.4-SNAPSHOT"
 sparkTestsVersion := "2.1.0-SNAPSHOT"

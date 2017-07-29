@@ -1,6 +1,7 @@
 package org.hammerlab.genomics.readsets.kryo
 
 import com.esotericsoftware.kryo.Kryo
+import org.apache.spark.internal.io.FileCommitProtocol.TaskCommitMessage
 import org.apache.spark.serializer.KryoRegistrator
 import org.hammerlab.bam
 import org.hammerlab.genomics.readsets.SampleRead
@@ -18,5 +19,8 @@ class Registrar extends KryoRegistrator {
     kryo.register(classOf[Array[SampleRead]])
 
     new bam.kryo.Registrar().registerClasses(kryo)
+
+    // https://issues.apache.org/jira/browse/SPARK-21569
+    kryo.register(classOf[TaskCommitMessage])
   }
 }
