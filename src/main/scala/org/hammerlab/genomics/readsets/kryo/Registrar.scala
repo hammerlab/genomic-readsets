@@ -1,26 +1,22 @@
 package org.hammerlab.genomics.readsets.kryo
 
-import com.esotericsoftware.kryo.Kryo
 import org.apache.spark.internal.io.FileCommitProtocol.TaskCommitMessage
-import org.apache.spark.serializer.KryoRegistrator
 import org.hammerlab.bam
 import org.hammerlab.genomics.readsets.SampleRead
 import org.hammerlab.genomics.{ loci, reads, reference }
+import org.hammerlab.kryo._
 
-class Registrar extends KryoRegistrator {
-  override def registerClasses(kryo: Kryo): Unit = {
-    new reference.Registrar().registerClasses(kryo)
+class Registrar extends spark.Registrar(
+  new reference.Registrar(),
 
-    new reads.Registrar().registerClasses(kryo)
+  new reads.Registrar(),
 
-    new loci.set.Registrar().registerClasses(kryo)
+  new loci.set.Registrar(),
 
-    kryo.register(classOf[SampleRead])
-    kryo.register(classOf[Array[SampleRead]])
+  arr[SampleRead],
 
-    new bam.kryo.Registrar().registerClasses(kryo)
+  bam.spark.load.Registrar(),
 
-    // https://issues.apache.org/jira/browse/SPARK-21569
-    kryo.register(classOf[TaskCommitMessage])
-  }
-}
+  // https://issues.apache.org/jira/browse/SPARK-21569
+  cls[TaskCommitMessage]
+)
