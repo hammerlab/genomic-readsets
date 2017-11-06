@@ -9,7 +9,7 @@ deps ++= Seq(
   args4j,
   args4s % "1.3.0",
   bytes % "1.0.3",
-  iterators % "1.4.0",
+  iterators % "2.0.0",
   htsjdk,
   loci % "2.0.1",
   paths % "1.3.1",
