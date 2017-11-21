@@ -1,5 +1,6 @@
 package org.hammerlab.genomics.readsets
 
+import hammerlab.path._
 import org.apache.parquet.hadoop.metadata.CompressionCodecName
 import org.bdgenomics.adam.models.{ SequenceDictionary, SequenceRecord }
 import org.bdgenomics.adam.rdd.{ ADAMContext, ADAMSaveAnyArgs }
@@ -12,7 +13,6 @@ import org.hammerlab.genomics.readsets.kryo.Registrar
 import org.hammerlab.genomics.readsets.rdd.ReadsRDDUtil
 import org.hammerlab.genomics.reference.test.ClearContigNames
 import org.hammerlab.genomics.reference.test.LociConversions._
-import org.hammerlab.paths.Path
 import org.hammerlab.spark.test.suite.{ KryoSparkSuite, SparkSerialization }
 import org.hammerlab.test.matchers.LazyAssert
 import org.hammerlab.test.resources.File

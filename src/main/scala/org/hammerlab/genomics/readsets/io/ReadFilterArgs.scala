@@ -1,7 +1,7 @@
 package org.hammerlab.genomics.readsets.io
 
+import hammerlab.bytes._
 import org.hammerlab.args4s.IntOptionHandler
-import org.hammerlab.bytes.{ Bytes, BytesOptionHandler }
 import org.hammerlab.genomics.loci.args.LociArgs
 import org.kohsuke.args4j.{ Option ⇒ Args4jOption }
 

@@ -1,13 +1,13 @@
 package org.hammerlab.genomics.readsets
 
 import grizzled.slf4j.Logging
+import hammerlab.path._
 import htsjdk.samtools.ValidationStringency
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.bdgenomics.adam.models.SequenceDictionary
 import org.bdgenomics.adam.rdd.ADAMContext
 import org.hammerlab.bam
-import org.hammerlab.bam.spark._
 import org.hammerlab.genomics.loci.parsing.All
 import org.hammerlab.genomics.loci.set.LociSet
 import org.hammerlab.genomics.reads.Read
@@ -16,7 +16,7 @@ import org.hammerlab.genomics.readsets.io.{ Config, Input, Sample }
 import org.hammerlab.genomics.readsets.rdd.ReadsRDD
 import org.hammerlab.genomics.reference.{ ContigLengths, ContigName, Locus }
 import org.hammerlab.hadoop.Configuration
-import org.hammerlab.paths.Path
+import spark_bam._
 
 
 /**

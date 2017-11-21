@@ -1,6 +1,6 @@
 package org.hammerlab.genomics.readsets.io
 
-import org.hammerlab.bytes.Bytes
+import hammerlab.bytes._
 import org.hammerlab.genomics.loci.args.LociInput
 import org.hammerlab.genomics.loci.parsing.{ All, ParsedLoci }
 import org.hammerlab.hadoop.Configuration

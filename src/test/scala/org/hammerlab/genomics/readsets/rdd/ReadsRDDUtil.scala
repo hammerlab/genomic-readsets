@@ -1,5 +1,6 @@
 package org.hammerlab.genomics.readsets.rdd
 
+import hammerlab.path._
 import org.apache.spark.rdd.RDD
 import org.hammerlab.genomics.bases.Bases
 import org.hammerlab.genomics.reads.{ MappedRead, ReadsUtil }
@@ -7,7 +8,6 @@ import org.hammerlab.genomics.readsets.args.impl.SingleSampleArgs
 import org.hammerlab.genomics.readsets.io.{ Config, TestInputConfig }
 import org.hammerlab.genomics.readsets.{ ReadSets, SampleId, SampleRead }
 import org.hammerlab.genomics.reference.Locus
-import org.hammerlab.paths.Path
 import org.hammerlab.spark.test.suite.SparkSuite
 import org.hammerlab.test.resources.PathUtil
 

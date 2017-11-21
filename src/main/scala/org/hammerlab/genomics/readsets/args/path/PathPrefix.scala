@@ -6,7 +6,7 @@ import org.kohsuke.args4j.{ CmdLineParser, OptionDef }
 
 /**
  * Type-class for a path-prefix that can be added by default to [[UnprefixedPath]]s to generate
- * [[org.hammerlab.paths.Path]]s.
+ * [[hammerlab.path.Path]]s.
  */
 case class PathPrefix(value: String)
 
