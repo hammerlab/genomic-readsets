@@ -1,6 +1,6 @@
 organization := "org.hammerlab.genomics"
 name := "readsets"
-version := "1.0.6-SNAPSHOT"
+version := "1.1.0-SNAPSHOT"
 
 addSparkDeps
 
@@ -8,13 +8,13 @@ deps ++= Seq(
   adam % "0.23.2",
   args4j,
   args4s % "1.3.0",
-  bytes % "1.1.0-SNAPSHOT",
+  bytes % "1.1.0",
   iterators % "2.0.0",
   htsjdk,
   loci % "2.0.1",
   paths % "1.4.0",
   slf4j,
-  spark_bam % "1.0.0-SNAPSHOT",
+  spark_bam % "1.0.0",
   spark_util % "2.0.1"
 )
 
