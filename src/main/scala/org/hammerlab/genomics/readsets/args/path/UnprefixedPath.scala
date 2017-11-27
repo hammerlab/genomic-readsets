@@ -1,13 +1,13 @@
 package org.hammerlab.genomics.readsets.args.path
 
+import hammerlab.path._
 import org.hammerlab.args4s.{ Handler, OptionHandler }
-import org.hammerlab.paths.Path
 import org.kohsuke.args4j.spi.Setter
 import org.kohsuke.args4j.{ CmdLineParser, OptionDef }
 
 /**
  * Type-class for a path-string that must be joined against an optional [[PathPrefix]] to generate a
- * [[org.hammerlab.paths.Path]].
+ * [[hammerlab.path.Path]].
  */
 case class UnprefixedPath(value: String) {
   def buildPath(implicit prefixOpt: Option[PathPrefix]): Path = {

@@ -7,7 +7,7 @@ import org.hammerlab.genomics.reference.test.region._
 
 trait RegionsRDDUtil {
 
-  def sc: SparkContext
+  protected def sc: SparkContext
 
   def makeRegionsRDD(numPartitions: Int, reads: (String, Int, Int, Int)*): RDD[Region] =
     sc.parallelize[Region](reads, numPartitions)

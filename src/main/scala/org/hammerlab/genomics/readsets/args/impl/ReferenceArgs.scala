@@ -1,8 +1,8 @@
 package org.hammerlab.genomics.readsets.args.impl
 
+import hammerlab.path._
 import org.hammerlab.genomics.readsets.args.base.{ HasReference, PrefixedPathsBase }
 import org.hammerlab.genomics.readsets.args.path.{ UnprefixedPath, UnprefixedPathHandler }
-import org.hammerlab.paths.Path
 import org.kohsuke.args4j.{ Option ⇒ Args4jOption }
 
 trait ReferenceArgs

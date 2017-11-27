@@ -1,33 +1,33 @@
 organization := "org.hammerlab.genomics"
 name := "readsets"
-version := "1.0.5"
+version := "1.1.0-SNAPSHOT"
 
 addSparkDeps
 
 deps ++= Seq(
-  libs.value('adam_core),
-  libs.value('args4j),
-  libs.value('args4s),
-  libs.value('hadoop_bam),
-  libs.value('iterators),
-  libs.value('htsjdk),
-  libs.value('loci),
-  libs.value('magic_rdds),
-  libs.value('paths),
-  libs.value('slf4j),
-  libs.value('spark_util)
+  adam % "0.23.2",
+  args4j,
+  args4s % "1.3.0",
+  bytes % "1.1.0",
+  iterators % "2.0.0",
+  htsjdk,
+  loci % "2.0.1",
+  paths % "1.4.0",
+  slf4j,
+  spark_bam % "1.0.0",
+  spark_util % "2.0.1"
 )
 
 compileAndTestDeps ++= Seq(
-  libs.value('reads),
-  libs.value('reference)
+  reads % "1.0.6",
+  reference % "1.4.0"
 )
+
+testDeps += genomic_utils % "1.3.1"
 
 // org.hammerlab.genomics:reads::tests uses org.hammerlab.genomics:utils::{compile,test}, but test-JAR deps don't
 // propagate trans-deps like non-classified ones.
-
-testDeps += libs.value('genomic_utils)
-testJarTestDeps += libs.value('genomic_utils)
+testTestDeps += genomic_utils % "1.3.1"
 
 publishTestJar
 takeFirstLog4JProperties

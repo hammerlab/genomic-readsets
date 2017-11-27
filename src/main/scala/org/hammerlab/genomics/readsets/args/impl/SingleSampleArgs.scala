@@ -1,9 +1,9 @@
 package org.hammerlab.genomics.readsets.args.impl
 
+import hammerlab.path._
 import org.hammerlab.genomics.readsets.args.base.{ Base, PrefixedPathsBase }
 import org.hammerlab.genomics.readsets.args.path.{ UnprefixedPath, UnprefixedPathHandler }
 import org.hammerlab.genomics.readsets.io.ReadFilterArgs
-import org.hammerlab.paths.Path
 import org.kohsuke.args4j.{ Option ⇒ Args4jOption }
 
 /** Argument for accepting a single set of reads (for e.g. germline variant calling). */

@@ -1,6 +1,6 @@
 package org.hammerlab.genomics.readsets.args.base
 
-import org.hammerlab.paths.Path
+import hammerlab.path._
 
 trait HasReference {
   def referencePath: Path

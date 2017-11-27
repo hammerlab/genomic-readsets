@@ -1,6 +1,7 @@
 package org.hammerlab.genomics.readsets.io
 
-import org.hammerlab.args4s.{ IntOptionHandler, StringOptionHandler }
+import hammerlab.bytes._
+import org.hammerlab.args4s.IntOptionHandler
 import org.hammerlab.genomics.loci.args.LociArgs
 import org.kohsuke.args4j.{ Option ⇒ Args4jOption }
 
@@ -43,7 +44,7 @@ trait ReadFilterArgs
   @Args4jOption(
     name = "--split-size",
     usage = "Maximum HDFS split size",
-    handler = classOf[StringOptionHandler]
+    handler = classOf[BytesOptionHandler]
   )
-  var splitSizeOpt: Option[String] = None
+  var splitSizeOpt: Option[Bytes] = None
 }

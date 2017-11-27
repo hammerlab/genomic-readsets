@@ -1,6 +1,6 @@
 package org.hammerlab.genomics.readsets.args.path
 
-import org.hammerlab.paths.Path
+import hammerlab.path._
 import org.hammerlab.test.Suite
 
 class PathPrefixTest
