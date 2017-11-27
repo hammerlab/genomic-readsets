@@ -158,10 +158,14 @@ class ReadSetsSuite
     val inputArgs = new SingleSampleArgs
     inputArgs.reads = adamOut
 
-    ReadSets(sc, inputArgs)
-      ._1
+    val readsets = ReadSets(sc, inputArgs)._1
+
+    readsets
       .allMappedReads
       .count() should be(3)
+
+    readsets.length should be(1)
+    readsets.sampleNames should be(Seq("reads"))
 
     inputArgs.includeDuplicates = true
 

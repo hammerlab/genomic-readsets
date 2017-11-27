@@ -25,16 +25,12 @@ import spark_bam._
  */
 case class ReadSets(readsRDDs: PerSample[ReadsRDD],
                     sequenceDictionary: SequenceDictionary,
-                    contigLengths: ContigLengths)
-  extends PerSample[ReadsRDD] {
+                    contigLengths: ContigLengths) {
 
   def samples: PerSample[Sample] = readsRDDs.map(_.sample)
 
   def numSamples: NumSamples = readsRDDs.length
   def sampleNames: PerSample[String] = samples.map(_.name)
-
-  override def length: NumSamples = readsRDDs.length
-  override def apply(sampleId: SampleId): ReadsRDD = readsRDDs(sampleId)
 
   def sc = readsRDDs.head.reads.sparkContext
 
@@ -52,6 +48,8 @@ case class ReadSets(readsRDDs: PerSample[ReadsRDD],
 }
 
 object ReadSets extends Logging {
+
+  implicit def toRDDs(readsets: ReadSets): PerSample[ReadsRDD] = readsets.readsRDDs
 
   def apply(sc: SparkContext, args: Base)(implicit cf: ContigName.Factory): (ReadSets, LociSet) = {
     val config = args.parseConfig(sc.hadoopConfiguration)
