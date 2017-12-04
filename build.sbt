@@ -1,6 +1,6 @@
 organization := "org.hammerlab.genomics"
 name := "readsets"
-v"1.2.0"
+r"1.2.0"
 
 addSparkDeps
 
@@ -17,7 +17,7 @@ dep(
           reads % "1.0.6" + testtest          ,
       reference % "1.4.0" + testtest          ,
           slf4j                               ,
-      spark_bam % "1.1.0"   snapshot          ,
+      spark_bam % "1.1.0"                     ,
      spark_util % "2.0.1"
 )
 
