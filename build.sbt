@@ -1,6 +1,7 @@
 organization := "org.hammerlab.genomics"
 name := "readsets"
 r"1.2.0"
+github.repo("genomic-readsets")
 
 addSparkDeps
 
