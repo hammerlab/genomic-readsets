@@ -11,8 +11,6 @@ class Registrar extends spark.Registrar(
 
   new reads.Registrar(),
 
-  new loci.set.Registrar(),
-
   arr[SampleRead],
 
   bam.spark.load.Registrar(),

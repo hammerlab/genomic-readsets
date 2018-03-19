@@ -1,31 +1,25 @@
-organization := "org.hammerlab.genomics"
-name := "readsets"
-r"1.2.0"
+subgroup("genomics", "readsets")
+v"1.2.1"
 github.repo("genomic-readsets")
 
 addSparkDeps
 
 dep(
-           adam % "0.23.2"                    ,
-         args4j                               ,
-         args4s % "1.3.0"                     ,
-          bytes % "1.1.0"                     ,
-      iterators % "2.0.0"                     ,
-  genomic_utils % "1.3.1" % tests             ,
-         htsjdk                               ,
-           loci % "2.0.1"                     ,
-          paths % "1.4.0"                     ,
-          reads % "1.0.6" + testtest          ,
-      reference % "1.4.0" + testtest          ,
-          slf4j                               ,
-      spark_bam % "1.1.0"                     ,
-     spark_util % "2.0.1"
-)
+                adam % "0.23.2"                    ,
+               bytes % "1.2.0"                     ,
+           iterators % "2.1.0"                     ,
+  genomics.     loci % "2.1.0"                     ,
+  genomics.    reads % "1.0.7" + testtest          ,
+  genomics.reference % "1.4.3" + testtest          ,
 
-dep(
-  // org.hammerlab.genomics:reads::tests uses org.hammerlab.genomics:utils::{compile,test}, but test-JAR deps don't
-  // propagate trans-deps like non-classified ones.
-  genomic_utils % "1.3.1" + testtest
+  // org.hammerlab.genomics:reads::tests uses org.hammerlab.genomics:utils::{compile,test}, but test-scoped deps don't
+  // transit like compile-scoped ones / like you'd expect them to.
+  genomics.    utils % "1.3.1" % tests +testtest   ,
+              htsjdk                               ,
+               paths % "1.5.0"                     ,
+               slf4j                               ,
+           spark_bam % "1.2.0-M1".snapshot         ,
+          spark_util % "2.0.4"
 )
 
 publishTestJar
