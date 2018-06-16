@@ -2,7 +2,6 @@ package org.hammerlab.genomics.readsets.args
 
 import hammerlab.path._
 import org.hammerlab.genomics.readsets.Inputs
-import org.hammerlab.genomics.readsets.args.NoSequenceDictionaryArgs
 import org.hammerlab.genomics.readsets.io.{ Input, ReadFilterArgs, Sample }
 
 trait InputArgs {

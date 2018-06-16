@@ -1,5 +1,6 @@
 package org.hammerlab.genomics.readsets.args.path
 
+import caseapp.core.argparser.{ ArgParser, SimpleArgParser }
 import hammerlab.path._
 
 /**
@@ -21,4 +22,7 @@ case class UnprefixedPath(value: String) {
 object UnprefixedPath {
   implicit def buildPath(unprefixedPath: UnprefixedPath)(implicit prefixOpt: Option[Prefix]): Path =
     unprefixedPath.buildPath
+
+  implicit val parser: ArgParser[UnprefixedPath] =
+    SimpleArgParser.from("string")(v ⇒ Right(UnprefixedPath(v)))
 }

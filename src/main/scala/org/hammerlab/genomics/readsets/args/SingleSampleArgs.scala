@@ -2,7 +2,6 @@ package org.hammerlab.genomics.readsets.args
 
 import caseapp.{ HelpMessage ⇒ M, Recurse ⇒ R }
 import hammerlab.path._
-import org.hammerlab.genomics.readsets.args.Base
 import org.hammerlab.genomics.readsets.args.path.UnprefixedPath
 import org.hammerlab.genomics.readsets.io.ReadFilterArgs
 import org.hammerlab.genomics.readsets.io.Sample.Name
