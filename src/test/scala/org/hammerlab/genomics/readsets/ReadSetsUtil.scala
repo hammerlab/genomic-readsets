@@ -14,8 +14,16 @@ trait ReadSetsUtil
 
   self: SparkSuite ⇒
 
-  def makeReadSets(inputs: Inputs, loci: ParsedLoci): (ReadSets, LociSet) = {
-    val readsets = ReadSets(sc, inputs, config = TestInputConfig(loci))
-    (readsets, LociSet(loci, readsets.contigLengths))
+  def makeReadSets(inputs: Inputs,
+                   loci: ParsedLoci): (ReadSets, LociSet) = {
+    val readsets =
+      ReadSets(
+        inputs,
+        config = TestInputConfig(loci)
+      )
+    (
+      readsets,
+      LociSet(loci, readsets.contigLengths)
+    )
   }
 }

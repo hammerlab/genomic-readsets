@@ -1,50 +1,57 @@
 package org.hammerlab.genomics.readsets.io
 
+import caseapp.{ HelpMessage ⇒ M, Recurse ⇒ R }
 import hammerlab.bytes._
-import org.hammerlab.args4s.IntOptionHandler
-import org.hammerlab.genomics.loci.args.LociArgs
-import org.kohsuke.args4j.{ Option ⇒ Args4jOption }
+import hammerlab.option._
+import org.hammerlab.genomics.loci
+import org.hammerlab.genomics.loci.parsing.All
+import org.hammerlab.hadoop.Configuration
+import org.hammerlab.hadoop.splits.MaxSplitSize
 
-trait ReadFilterArgs
-  extends ReadFilters
-    with LociArgs {
+case class ReadFilterArgs(
+    @R lociArgs: loci.Args = loci.Args(),
 
-  @Args4jOption(
-    name = "--min-alignment-quality",
-    usage = "Minimum read mapping quality for a read (Phred-scaled)",
-    handler = classOf[IntOptionHandler]
-  )
-  var minAlignmentQualityOpt: Option[Int] = None
+    @M("Minimum read mapping quality for a read (Phred-scaled)")
+    minAlignmentQuality: Option[Int] = None,
 
-  @Args4jOption(
-    name = "--include-duplicates",
-    usage = "Include reads marked as duplicates"
-  )
-  var includeDuplicates: Boolean = false
+    @M("Include reads marked as duplicates")
+    includeDuplicates: Boolean = false,
 
-  @Args4jOption(
-    name = "--include-failed-quality-checks",
-    usage = "Include reads that failed vendor quality checks"
-  )
-  var includeFailedQualityChecks: Boolean = false
+    @M("Include reads that failed vendor quality checks")
+    includeFailedQualityChecks: Boolean = false,
 
-  @Args4jOption(
-    name = "--include-single-end",
-    usage = "Include single-end reads"
-  )
-  var includeSingleEnd: Boolean = false
+    @M("Include single-end reads")
+    includeSingleEnd: Boolean = false,
 
-  @Args4jOption(
-    name = "--only-mapped-reads",
-    usage = "Include only mapped reads",
-    forbids = Array("--loci", "--loci-file")
-  )
-  var onlyMappedReads: Boolean = false
+    // TODO: forbid --loci, --loci-file
+    @M("Include only mapped reads")
+    onlyMappedReads: Boolean = false,
 
-  @Args4jOption(
-    name = "--split-size",
-    usage = "Maximum HDFS split size",
-    handler = classOf[BytesOptionHandler]
-  )
-  var splitSizeOpt: Option[Bytes] = None
+    @M("Maximum HDFS split size")
+    splitSize: Option[Bytes] = None
+) {
+  def parseConfig(implicit conf: Configuration): Config = {
+    val parsed =
+      (lociArgs.loci, lociArgs.lociFile, onlyMappedReads) match {
+        case (None, None, _) ⇒
+          onlyMappedReads ? All
+        case (_, _, true) ⇒
+          throw new IllegalArgumentException(
+            s"Can't specify --only-mapped-reads *and* (--loci || --loci-file)"
+          )
+        case _ ⇒
+          lociArgs.parse
+      }
+    Config(
+      overlapsLoci = parsed,
+      nonDuplicate = !includeDuplicates,
+      passedVendorQualityChecks = !includeFailedQualityChecks,
+      isPaired = !includeSingleEnd,
+      minAlignmentQuality = minAlignmentQuality,
+      maxSplitSize =
+        MaxSplitSize(
+          splitSize
+        )
+    )
+  }
 }

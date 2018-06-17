@@ -4,7 +4,7 @@ import hammerlab.path._
 import org.apache.spark.rdd.RDD
 import org.hammerlab.genomics.bases.Bases
 import org.hammerlab.genomics.reads.{ MappedRead, ReadsUtil }
-import org.hammerlab.genomics.readsets.args.impl.SingleSampleArgs
+import org.hammerlab.genomics.readsets.args.SingleSampleArgs
 import org.hammerlab.genomics.readsets.io.{ Config, TestInputConfig }
 import org.hammerlab.genomics.readsets.{ ReadSets, SampleId, SampleRead }
 import org.hammerlab.genomics.reference.Locus
@@ -38,17 +38,18 @@ trait ReadsRDDUtil
 
   def loadReadsRDD(path: Path,
                    config: Config = Config.empty): ReadsRDD = {
-    val args = new SingleSampleArgs {}
+    val args: SingleSampleArgs =
+      SingleSampleArgs(
+        reads = path
+      )
 
-    // Load resource File.
-    args.reads = path
+    val inputs = args.inputs
 
     val ReadSets(reads, _, _) =
       ReadSets(
-        sc,
-        args.inputs,
+        inputs,
         config,
-        contigLengthsFromDictionary = !args.noSequenceDictionary
+        contigLengthsFromDictionary = !args.noSequenceDictionaryArgs.noSequenceDictionary
       )
 
     reads(0)

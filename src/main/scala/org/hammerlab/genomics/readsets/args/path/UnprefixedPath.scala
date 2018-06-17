@@ -1,20 +1,18 @@
 package org.hammerlab.genomics.readsets.args.path
 
+import caseapp.core.argparser.{ ArgParser, SimpleArgParser }
 import hammerlab.path._
-import org.hammerlab.args4s.{ Handler, OptionHandler }
-import org.kohsuke.args4j.spi.Setter
-import org.kohsuke.args4j.{ CmdLineParser, OptionDef }
 
 /**
- * Type-class for a path-string that must be joined against an optional [[PathPrefix]] to generate a
+ * Type-class for a path-string that must be joined against an optional [[Prefix]] to generate a
  * [[hammerlab.path.Path]].
  */
 case class UnprefixedPath(value: String) {
-  def buildPath(implicit prefixOpt: Option[PathPrefix]): Path = {
+  def buildPath(implicit prefix: Option[Prefix]): Path = {
     val path = Path(value)
-    prefixOpt match {
+    prefix match {
       case Some(prefix) if !path.isAbsolute ⇒
-        Path(prefix.value) / value
+        prefix / value
       case _ ⇒
         path
     }
@@ -22,34 +20,9 @@ case class UnprefixedPath(value: String) {
 }
 
 object UnprefixedPath {
-  implicit def buildPath(unprefixedPath: UnprefixedPath)(implicit prefixOpt: Option[PathPrefix]): Path =
+  implicit def buildPath(unprefixedPath: UnprefixedPath)(implicit prefixOpt: Option[Prefix]): Path =
     unprefixedPath.buildPath
+
+  implicit val parser: ArgParser[UnprefixedPath] =
+    SimpleArgParser.from("string")(v ⇒ Right(UnprefixedPath(v)))
 }
-
-/**
- * Cmd-line option-handler for [[UnprefixedPath]].
- */
-class UnprefixedPathHandler(parser: CmdLineParser,
-                            option: OptionDef,
-                            setter: Setter[UnprefixedPath])
-  extends Handler[UnprefixedPath](
-    parser,
-    option,
-    setter,
-    "PATH",
-    UnprefixedPath(_)
-  )
-
-/**
- * Cmd-line option-handler for an [[Option[UnprefixedPath]]].
- */
-class UnprefixedPathOptionHandler(parser: CmdLineParser,
-                                  option: OptionDef,
-                                  setter: Setter[Option[UnprefixedPath]])
-  extends OptionHandler[UnprefixedPath](
-    parser,
-    option,
-    setter,
-    "PATH",
-    UnprefixedPath(_)
-  )

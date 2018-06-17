@@ -7,7 +7,7 @@ import org.bdgenomics.adam.rdd.{ ADAMContext, ADAMSaveAnyArgs }
 import org.hammerlab.genomics.loci.parsing.ParsedLoci
 import org.hammerlab.genomics.reads.{ MappedRead, Read }
 import org.hammerlab.genomics.readsets.ReadSets.mergeSequenceDictionaries
-import org.hammerlab.genomics.readsets.args.impl.SingleSampleArgs
+import org.hammerlab.genomics.readsets.args.SingleSampleArgs
 import org.hammerlab.genomics.readsets.io.{ Config, Input, TestInputConfig }
 import org.hammerlab.genomics.readsets.kryo.Registrar
 import org.hammerlab.genomics.readsets.rdd.ReadsRDDUtil
@@ -138,8 +138,8 @@ class ReadSetsSuite
 
   test("load reads from ADAM") {
     // First load reads from SAM using ADAM and save as ADAM
-    val adamContext: ADAMContext = sc
-    val adamRecords = adamContext.loadBam(File("mdtagissue.sam"))
+    import ADAMContext._
+    val adamRecords = sc.loadBam(File("mdtagissue.sam"))
 
     val adamOut = tmpPath(suffix = ".adam")
     val args = new ADAMSaveAnyArgs {
@@ -155,10 +155,12 @@ class ReadSetsSuite
 
     adamRecords.saveAsParquet(args)
 
-    val inputArgs = new SingleSampleArgs
-    inputArgs.reads = adamOut
+    val inputArgs =
+      SingleSampleArgs(
+        reads = adamOut
+      )
 
-    val readsets = ReadSets(sc, inputArgs)._1
+    val readsets = ReadSets(inputArgs)._1
 
     readsets
       .allMappedReads
@@ -167,9 +169,17 @@ class ReadSetsSuite
     readsets.length should be(1)
     readsets.sampleNames should be(Seq("reads"))
 
-    inputArgs.includeDuplicates = true
+    val withDuplicateArgs =
+      inputArgs.copy(
+        readFilterArgs =
+          inputArgs
+            .readFilterArgs
+            .copy(
+              includeDuplicates = true
+            )
+      )
 
-    ReadSets(sc, inputArgs)
+    ReadSets(withDuplicateArgs)
       ._1
       .allMappedReads
       .count() should be(5)

@@ -11,13 +11,12 @@ import org.hammerlab.bam
 import org.hammerlab.genomics.loci.parsing.All
 import org.hammerlab.genomics.loci.set.LociSet
 import org.hammerlab.genomics.reads.Read
-import org.hammerlab.genomics.readsets.args.base.Base
+import org.hammerlab.genomics.readsets.args.Base
 import org.hammerlab.genomics.readsets.io.{ Config, Input, Sample }
 import org.hammerlab.genomics.readsets.rdd.ReadsRDD
 import org.hammerlab.genomics.reference.{ ContigLengths, ContigName, Locus }
-import org.hammerlab.hadoop.Configuration
+import org.hammerlab.spark.Context
 import spark_bam._
-
 
 /**
  * A [[ReadSets]] contains reads from multiple inputs as well as [[SequenceDictionary]] / contig-length information
@@ -51,27 +50,52 @@ object ReadSets extends Logging {
 
   implicit def toRDDs(readsets: ReadSets): PerSample[ReadsRDD] = readsets.readsRDDs
 
-  def apply(sc: SparkContext, args: Base)(implicit cf: ContigName.Factory): (ReadSets, LociSet) = {
-    val config = args.parseConfig(sc.hadoopConfiguration)
-    val readsets = apply(sc, args.inputs, config, !args.noSequenceDictionary)
-    (readsets, LociSet(config.loci, readsets.contigLengths))
+  import hammerlab.shapeless._
+  def apply(args: Base)(
+      implicit
+      sc: SparkContext,
+      cf: ContigName.Factory
+  ): (ReadSets, LociSet) = {
+    val config = args.readFilterArgs.parseConfig(sc.hadoopConfiguration)
+    val readsets =
+      apply(
+        args.inputs,
+        config,
+        !args.noSequenceDictionaryArgs.noSequenceDictionary
+      )
+    (
+      readsets,
+      LociSet(
+        config.loci,
+        readsets.contigLengths
+      )
+    )
   }
 
   /**
     * Load reads from multiple files, merging their sequence dictionaries and verifying that they are consistent.
     */
-  def apply(sc: SparkContext,
-            inputs: Inputs,
+  def apply(inputs: Inputs,
             config: Config,
-            contigLengthsFromDictionary: Boolean = true)(implicit cf: ContigName.Factory): ReadSets =
-    apply(sc, inputs.map((_, config)), contigLengthsFromDictionary)
+            contigLengthsFromDictionary: Boolean = true)(
+      implicit
+      sc: SparkContext,
+      cf: ContigName.Factory
+  ): ReadSets =
+    apply(
+      inputs.map((_, config)),
+      contigLengthsFromDictionary
+    )
 
   /**
    * Load reads from multiple files, allowing different filters to be applied to each file.
    */
-  def apply(sc: SparkContext,
-            inputsAndFilters: PerSample[(Input, Config)],
-            contigLengthsFromDictionary: Boolean)(implicit cf: ContigName.Factory): ReadSets = {
+  def apply(inputsAndFilters: PerSample[(Input, Config)],
+            contigLengthsFromDictionary: Boolean)(
+      implicit
+      sc: SparkContext,
+      cf: ContigName.Factory
+  ): ReadSets = {
 
     val (inputs, _) = inputsAndFilters.unzip
 
@@ -79,7 +103,7 @@ object ReadSets extends Logging {
       (for {
         (Input(id, _, path), config) ← inputsAndFilters
       } yield
-        load(path, sc, id, config)
+        load(path, id, config)
       )
       .unzip
 
@@ -125,15 +149,18 @@ object ReadSets extends Logging {
    * @return
    */
   private[readsets] def load(path: Path,
-                             sc: SparkContext,
                              sampleId: Int,
-                             config: Config)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
+                             config: Config)(
+      implicit
+      sc: SparkContext,
+      cf: ContigName.Factory
+  ): (RDD[Read], SequenceDictionary) = {
 
     val (allReads, sequenceDictionary) =
       if (path.toString.endsWith(".bam") || path.toString.endsWith(".sam"))
-        loadFromBAM(path, sc, sampleId, config)
+        loadFromBAM(path, sampleId, config)
       else
-        loadFromADAM(path, sc, sampleId, config)
+        loadFromADAM(path, sampleId, config)
 
     val reads = filterRDD(allReads, config, sequenceDictionary)
 
@@ -142,21 +169,30 @@ object ReadSets extends Logging {
 
   /** Returns an RDD of Reads and SequenceDictionary from reads in BAM format **/
   private def loadFromBAM(path: Path,
-                          sc: SparkContext,
                           sampleId: Int,
-                          config: Config)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
-
-    implicit val conf: Configuration = sc.hadoopConfiguration
+                          config: Config)(
+      implicit
+      sc: Context,
+      cf: ContigName.Factory
+  ): (RDD[Read], SequenceDictionary) = {
 
     val contigLengths = bam.header.ContigLengths(path)
 
     val sequenceDictionary = SequenceDictionary(contigLengths)
 
+    implicit val splitSize = config.maxSplitSize
+
     val reads =
       config
         .overlapsLoci
         .filterNot(_ == All)
-        .map(
+        .fold {
+          sc
+            .loadReads(
+              path,
+              splitSize = config.maxSplitSize
+            )
+        } {
           loci ⇒
             sc
               .loadBamIntervals(
@@ -164,17 +200,9 @@ object ReadSets extends Logging {
                 LociSet(
                   loci,
                   contigLengths.values.toMap
-                ),
-                splitSize = config.maxSplitSize
+                )
               )
-        )
-        .getOrElse(
-          sc
-            .loadReads(
-              path,
-              splitSize = config.maxSplitSize
-            )
-        )
+        }
         .map(Read(_))
 
     (reads, sequenceDictionary)
@@ -182,15 +210,18 @@ object ReadSets extends Logging {
 
   /** Returns an RDD of Reads and SequenceDictionary from reads in ADAM format **/
   private def loadFromADAM(path: Path,
-                           sc: SparkContext,
                            sampleId: Int,
-                           config: Config)(implicit cf: ContigName.Factory): (RDD[Read], SequenceDictionary) = {
+                           config: Config)(
+      implicit
+      sc: SparkContext,
+      cf: ContigName.Factory
+  ): (RDD[Read], SequenceDictionary) = {
 
     logger.info(s"Using ADAM to read: $path")
 
-    val adamContext: ADAMContext = sc
+    import ADAMContext._
 
-    val alignmentRDD = adamContext.loadAlignments(path, stringency = ValidationStringency.LENIENT)
+    val alignmentRDD = sc.loadAlignments(path, stringency = ValidationStringency.LENIENT)
 
     val sequenceDictionary = alignmentRDD.sequences
 
